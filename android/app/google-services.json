@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1071455479389",
+    "project_id": "letterscirious",
+    "storage_bucket": "letterscirious.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1071455479389:android:123b7a29bd74e9991d0fb4",
+        "android_client_info": {
+          "package_name": "com.example.letters"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBR4B587X4q2BdggWVVw-AqjJMEVAaZKUw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,197 @@
+import 'package:easy_image_viewer/easy_image_viewer.dart';
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:letters/pages/chat_page.dart';
+import 'package:letters/pages/home.dart';
+import 'package:letters/services/chat/chat_service.dart';
+
+class PopUpMenu extends StatefulWidget {
+  const PopUpMenu({
+    super.key,
+    required this.height,
+    required this.widget,
+    required this.callBack,
+    required ChatService chatService,
+  }) : _chatService = chatService;
+
+  final double height;
+  final ChatPage widget;
+  final Function callBack;
+  final ChatService _chatService;
+
+  @override
+  State<PopUpMenu> createState() => _PopUpMenuState();
+}
+
+class _PopUpMenuState extends State<PopUpMenu> {
+  int groupVal = 1;
+  @override
+  Widget build(BuildContext context) {
+    double width = MediaQuery.of(context).size.width;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: PopupMenuButton(
+        offset: Offset(0, widget.height / 17),
+        itemBuilder: (context) => [
+          PopupMenuItem(
+            value: 0,
+            child: ListTile(
+              onTap: () {
+                Navigator.of(context).pop();
+                showBottomSheet(
+                    context: context,
+                    builder: (context) {
+                      return SizedBox(
+                        height: widget.height / 2,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: <Widget>[
+                            GestureDetector(
+                              onTap: () {
+                                if (widget.widget.imgUrl != "") {
+                                  final imageProvider =
+                                      Image.network(widget.widget.imgUrl).image;
+                                  showImageViewer(context, imageProvider);
+                                }
+                              },
+                              child: CircleAvatar(
+                                backgroundColor: Colors.transparent,
+                                radius: widget.height / 10,
+                                child: ClipOval(
+                                  child: widget.widget.imgUrl == ""
+                                      ? Image.asset("assets/profile.png")
+                                      : Image.network(widget.widget.imgUrl,
+                                          height: widget.height),
+                                ),
+                              ),
+                            ),
+                            ListTile(
+                              title: Text(widget.widget.receiverName),
+                              leading: const Icon(Icons.person),
+                            ),
+                            ListTile(
+                              title: Text(widget.widget.receiverEmail),
+                              leading: const Icon(Icons.email),
+                            ),
+                            ListTile(
+                              title: Text(widget.widget.receiverBio == ""
+                                  ? "Hi! I am using Letters"
+                                  : widget.widget.receiverBio),
+                              leading: const Icon(Icons.book),
+                            ),
+                          ],
+                        ),
+                      );
+                    });
+              },
+              leading: const Icon(Icons.person),
+              title: const Text("User Information"),
+            ),
+          ),
+          PopupMenuItem(
+            value: 2,
+            onTap: () {
+              showBottomSheet(
+                  context: context,
+                  builder: (context) {
+                    return StatefulBuilder(
+                      builder: (context, setModalState) => SizedBox(
+                        width: width,
+                        height: widget.height / 2.75,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: <Widget>[
+                            SizedBox(height: widget.height / 40),
+                            Text(
+                              "Themes",
+                              style: GoogleFonts.inter(
+                                  fontSize: widget.height / 40),
+                            ),
+                            SizedBox(height: widget.height / 40),
+                            ListTile(
+                              title: const Text("Original"),
+                              trailing: Radio(
+                                activeColor: Colors.green,
+                                value: 1,
+                                groupValue: groupVal,
+                                onChanged: (val) {
+                                  setModalState(() {
+                                    widget.callBack(val);
+                                    groupVal = val!;
+                                  });
+                                },
+                              ),
+                            ),
+                            ListTile(
+                              title: const Text("Lovers Rock"),
+                              trailing: Radio(
+                                activeColor: Colors.pink,
+                                value: 2,
+                                groupValue: groupVal,
+                                onChanged: (val) {
+                                  setModalState(() {
+                                    widget.callBack(val);
+                                    groupVal = val!;
+                                  });
+                                },
+                              ),
+                            ),
+                            ListTile(
+                              title: const Text("Euphoria"),
+                              trailing: Radio(
+                                activeColor: Colors.red,
+                                value: 3,
+                                groupValue: groupVal,
+                                onChanged: (val) {
+                                  setModalState(() {
+                                    widget.callBack(val);
+                                    groupVal = val!;
+                                  });
+                                },
+                              ),
+                            ),
+                            ListTile(
+                              title: const Text("Element"),
+                              trailing: Radio(
+                                value: 4,
+                                activeColor: Colors.purple,
+                                groupValue: groupVal,
+                                onChanged: (val) {
+                                  setModalState(() {
+                                    widget.callBack(val);
+                                    groupVal = val!;
+                                  });
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  });
+            },
+            child: const ListTile(
+              leading: Icon(Icons.workspaces),
+              title: Text("Themes"),
+            ),
+          ),
+          PopupMenuItem(
+            value: 1,
+            child: ListTile(
+              onTap: () async {
+                await widget._chatService.deleteChat(widget.widget.receiverID);
+                // ignore: use_build_context_synchronously
+                Navigator.of(context).pushReplacement(
+                    MaterialPageRoute(builder: (context) => const HomePage()));
+              },
+              textColor: Colors.red,
+              iconColor: Colors.red,
+              leading: const Icon(Icons.delete),
+              title: const Text("Delete Chat"),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
