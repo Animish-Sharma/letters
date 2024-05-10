@@ -1,9 +1,10 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:easy_image_viewer/easy_image_viewer.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:letters/auth/auth_service.dart';
 import 'package:letters/auth/loginorregister.dart';
-import 'package:letters/components/custom_button.dart';
 import 'package:letters/models/user.dart';
 import 'package:letters/pages/user/update.dart';
 
@@ -36,7 +37,7 @@ class _ProfilePageState extends State<ProfilePage> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.transparent,
-        title: Text("P R O F I L E"),
+        title: const Text("P R O F I L E"),
         centerTitle: true,
       ),
       body: SingleChildScrollView(
@@ -57,7 +58,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      SizedBox(height: height / 15),
+                      SizedBox(height: height / 20),
                       GestureDetector(
                         onTap: () {
                           if (data.imgUrl != "") {
@@ -68,7 +69,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         },
                         child: CircleAvatar(
                           backgroundColor: Colors.transparent,
-                          radius: height / 9,
+                          radius: height / 8,
                           child: ClipOval(
                             child: data.imgUrl == ""
                                 ? Image.asset("assets/profile.png")
@@ -141,63 +142,8 @@ class _ProfilePageState extends State<ProfilePage> {
                         mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
                           SizedBox(
-                            width: width / 3,
-                            child: ElevatedButton.icon(
-                              onPressed: () async {
-                                showDialog(
-                                    context: context,
-                                    builder: (context) {
-                                      return AlertDialog(
-                                        title: const Text("Delete Account"),
-                                        content: const Text(
-                                            "Are you sure you want to delete your account ?"),
-                                        actions: [
-                                          MaterialButton(
-                                            child: const Text("NO"),
-                                            onPressed: () {
-                                              Navigator.of(context).pop();
-                                            },
-                                          ),
-                                          MaterialButton(
-                                            child: const Text(
-                                              "YES",
-                                              style:
-                                                  TextStyle(color: Colors.red),
-                                            ),
-                                            onPressed: () async {
-                                              await _authService.deleteUser();
-                                              Navigator.of(context).pushReplacement(
-                                                  MaterialPageRoute(
-                                                      builder: (context) =>
-                                                          const LoginOrRegister()));
-                                            },
-                                          ),
-                                        ],
-                                      );
-                                    });
-                              },
-                              icon: Icon(
-                                Icons.delete,
-                                size: width / 15,
-                                color: Colors.white,
-                              ),
-                              label: const Text(
-                                "Delete",
-                                style: TextStyle(color: Colors.white),
-                              ),
-                              style: ElevatedButton.styleFrom(
-                                shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(2.0),
-                                    side: BorderSide(color: Colors.red)),
-                                backgroundColor: Colors.red,
-                                foregroundColor: Theme.of(context)
-                                    .colorScheme
-                                    .inversePrimary,
-                              ),
-                            ),
-                          ),
-                          SizedBox(
-                            width: width / 3,
+                            width: width / 2,
+                            height: height / 18,
                             child: ElevatedButton.icon(
                               onPressed: () {
                                 Navigator.of(context).push(MaterialPageRoute(
@@ -208,9 +154,10 @@ class _ProfilePageState extends State<ProfilePage> {
                                 size: width / 15,
                                 color: Colors.white,
                               ),
-                              label: const Text(
-                                "Update",
-                                style: TextStyle(color: Colors.white),
+                              label: Text(
+                                "UPDATE",
+                                style: TextStyle(
+                                    color: Colors.white, fontSize: width / 20),
                               ),
                               style: ElevatedButton.styleFrom(
                                 shape: RoundedRectangleBorder(

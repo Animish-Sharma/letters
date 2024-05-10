@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:letters/models/message.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ChatService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -19,14 +20,6 @@ class ChatService {
     });
   }
 
-  Future getTheme(String receiverId) async {
-    final String currentUserID = _auth.currentUser!.uid;
-    List<String> ids = [currentUserID, receiverId];
-    ids.sort();
-    String chatRoomID = ids.join("_");
-    return await _firestore.collection("chat_room").doc(chatRoomID);
-  }
-
   Future getUser(String id) async {
     return await _firestore
         .collection("Users")
@@ -38,6 +31,7 @@ class ChatService {
   Stream<List<String>> getActiveChats() {
     return _firestore
         .collection("chat_room")
+        .orderBy("lastMessage", descending: true)
         .where("users", arrayContains: _auth.currentUser!.uid)
         .snapshots()
         .map((snapshot) {
@@ -78,6 +72,18 @@ class ChatService {
     });
   }
 
+  Future<void> lastMessageSent(
+      String chatRoomId, Timestamp time, String receiverID) async {
+    String currentUserId = FirebaseAuth.instance.currentUser!.uid;
+    List<String> users = [currentUserId, receiverID];
+    await _firestore.collection("chat_room").doc(chatRoomId).set({
+      "lastMessage": time,
+      "user": currentUserId,
+      "otheruser": receiverID,
+      "users": users
+    });
+  }
+
   Future<void> createChatRoom(String receiverID) async {
     final String currentUserID = _auth.currentUser!.uid;
     List<String> ids = [currentUserID, receiverID];
@@ -91,7 +97,7 @@ class ChatService {
         : null);
   }
 
-  Future<void> sendMessage(String receiverID, message) async {
+  Future<void> sendMessage(String receiverID, message, String repliedTo) async {
     final String currentUserID = _auth.currentUser!.uid;
     final String currentUserEmail = _auth.currentUser!.email!;
     final Timestamp timestamp = Timestamp.now();
@@ -103,12 +109,13 @@ class ChatService {
       receiverID: receiverID,
       message: message,
       isImg: false,
+      repliedTo: repliedTo,
       timestamp: timestamp,
     );
     List<String> ids = [currentUserID, receiverID];
     ids.sort();
     String chatRoomID = ids.join("_");
-
+    await lastMessageSent(chatRoomID, timestamp, receiverID);
     await _firestore
         .collection("chat_room")
         .doc(chatRoomID)
@@ -130,6 +137,7 @@ class ChatService {
       senderID: currentUserID,
       senderEmail: currentUserEmail,
       receiverID: receiverID,
+      repliedTo: "",
       message: imgUrl,
       isVoice: false,
       isImg: true,
@@ -138,7 +146,7 @@ class ChatService {
     List<String> ids = [currentUserID, receiverID];
     ids.sort();
     String chatRoomID = ids.join("_");
-
+    await lastMessageSent(chatRoomID, timestamp, receiverID);
     await _firestore
         .collection("chat_room")
         .doc(chatRoomID)
@@ -161,6 +169,7 @@ class ChatService {
       senderEmail: currentUserEmail,
       receiverID: receiverID,
       message: url,
+      repliedTo: "",
       isImg: false,
       isVoice: true,
       timestamp: timestamp,
@@ -168,12 +177,28 @@ class ChatService {
     List<String> ids = [currentUserID, receiverID];
     ids.sort();
     String chatRoomID = ids.join("_");
-
+    await lastMessageSent(chatRoomID, timestamp, receiverID);
     await _firestore
         .collection("chat_room")
         .doc(chatRoomID)
         .collection("Messages")
         .add(newMessage.toMap());
+  }
+
+  Future<int> getThemeInt(String receiverID) async {
+    List<String> ids = [_auth.currentUser!.uid, receiverID];
+    ids.sort();
+    String chatRoomID = ids.join("_");
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt(chatRoomID) ?? 1;
+  }
+
+  Future<void> setThemeInt(String receiverID, int themeInt) async {
+    List<String> ids = [_auth.currentUser!.uid, receiverID];
+    ids.sort();
+    String chatRoomID = ids.join("_");
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(chatRoomID, themeInt);
   }
 
   Stream<QuerySnapshot> getMessages(String userID, String otherUserID) {

@@ -1,9 +1,13 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:letters/auth/auth_service.dart';
 import 'package:letters/components/chat_bubble.dart';
+import 'package:letters/components/custom_button.dart';
 import 'package:letters/components/custom_textfield.dart';
 import 'package:letters/components/popup_menu.dart';
 import 'package:letters/services/chat/chat_service.dart';
@@ -11,6 +15,7 @@ import 'package:letters/themes/theme_provider.dart';
 import 'package:path_provider/path_provider.dart';
 import "package:provider/provider.dart";
 import 'package:record/record.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import "dart:math";
 import 'package:uuid/uuid.dart';
 
@@ -46,6 +51,9 @@ class _ChatPageState extends State<ChatPage> {
   final record = Record();
   String path = "";
   bool isRecording = false;
+  bool messageReply = false;
+  String repliedMessage = "";
+  bool repliedCurrentUser = false;
 
   startRecord() async {
     final location = await getApplicationDocumentsDirectory();
@@ -73,10 +81,27 @@ class _ChatPageState extends State<ChatPage> {
     await _chatService.createChatRoom(widget.receiverID);
   }
 
+  getThemeInt() async {
+    return await _chatService.getThemeInt(widget.receiverID);
+  }
+
+  Future<Null> getSharedPrefs() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    List<String> ids = [
+      FirebaseAuth.instance.currentUser!.uid,
+      widget.receiverID
+    ];
+    ids.sort();
+    String chatRoomID = ids.join("_");
+    setState(() {
+      widget.themeInt = prefs.getInt(chatRoomID) ?? 1;
+    });
+  }
+
   @override
   void initState() {
     super.initState();
-
+    getSharedPrefs();
     myFocusNode.addListener(() {
       if (myFocusNode.hasFocus) {
         Future.delayed(const Duration(milliseconds: 300), () => scrollDown());
@@ -114,7 +139,7 @@ class _ChatPageState extends State<ChatPage> {
   Color getpDark() {
     if (widget.themeInt == 1) return const Color(0xff2e7d32);
     if (widget.themeInt == 2) return const Color(0xff1565c0);
-    if (widget.themeInt == 3) return Color(0xffd32f2f);
+    if (widget.themeInt == 3) return const Color(0xffd32f2f);
     return Colors.purple;
   }
 
@@ -148,7 +173,7 @@ class _ChatPageState extends State<ChatPage> {
     if (_messageController.text.isNotEmpty) {
       String x = _messageController.text;
       _messageController.clear();
-      await _chatService.sendMessage(widget.receiverID, x);
+      await _chatService.sendMessage(widget.receiverID, x, repliedMessage);
       scrollDown();
     }
   }
@@ -184,11 +209,31 @@ class _ChatPageState extends State<ChatPage> {
             chatService: _chatService,
             callBack: callBack,
           ),
+          GestureDetector(
+            onTap: () {
+              showDialog(
+                  context: context,
+                  builder: (context) {
+                    return const AlertDialog(
+                      title: Text("Coming Soon"),
+                      content: Text(
+                          "This feature will soon be available to all users, right now it is being tested. \nRegards, \nAnimish Sharma"),
+                    );
+                  });
+            },
+            child: const Padding(
+              padding: EdgeInsets.only(right: 16.0),
+              child: Icon(Icons.call),
+            ),
+          ),
         ],
       ),
       body: Column(
         children: <Widget>[
           Expanded(child: _buildMessageList(context)),
+          messageReply
+              ? _buildReplyMessage(repliedMessage, repliedCurrentUser, context)
+              : Container(),
           _buildUserInput(context)
         ],
       ),
@@ -247,6 +292,60 @@ class _ChatPageState extends State<ChatPage> {
     );
   }
 
+  Widget _buildReplyMessage(
+      String message, bool isCurrentUser, BuildContext context) {
+    double width = MediaQuery.of(context).size.width;
+    double height = MediaQuery.of(context).size.height;
+    return Container(
+      margin: EdgeInsets.only(right: width / 6.5, left: width / 30),
+      height: height / 20,
+      clipBehavior: Clip.hardEdge,
+      decoration: BoxDecoration(
+        color: const Color(0xff9381ff),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              SizedBox(
+                width: width / 2,
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: RichText(
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    text: TextSpan(
+                        text: "Replying to: ",
+                        children: [TextSpan(text: message)]),
+                  ),
+                ),
+              ),
+              GestureDetector(
+                onTap: () {
+                  setState(() {
+                    messageReply = false;
+                  });
+                },
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                  child: Icon(
+                    Icons.close,
+                    color: Colors.white,
+                    size: height / 30,
+                  ),
+                ),
+              )
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildMessageItem(DocumentSnapshot doc, Color i) {
     Color pLightColor = getpLight();
     Color sLightColor = getsLight();
@@ -257,32 +356,45 @@ class _ChatPageState extends State<ChatPage> {
     final date = data["timestamp"].toDate();
     final alignment =
         isCurrentUser ? Alignment.centerRight : Alignment.centerLeft;
-    return Container(
-      alignment: alignment,
-      child: Column(
-        crossAxisAlignment:
-            isCurrentUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-        children: [
-          ChatBubble(
-            message: data["message"],
-            isCurrentUser: isCurrentUser,
-            sLightColor: sLightColor,
-            pLightColor: pLightColor,
-            pDarkColor: pDarkColor,
-            sDarkColor: sDarkColor,
-            isImage: data["isImg"],
-            isVoice: data["isVoice"],
-          ),
-          Padding(
-            padding: isCurrentUser
-                ? const EdgeInsets.only(right: 24)
-                : const EdgeInsets.only(left: 30),
-            child: Text(
-              date.toString().substring(11, 16),
-              style: GoogleFonts.poppins(color: i, fontSize: 10),
+    return GestureDetector(
+      onHorizontalDragUpdate: (det) {
+        int sensitivity = 6;
+        if (det.delta.dx > sensitivity) {
+          setState(() {
+            messageReply = true;
+            repliedMessage = data["message"];
+            repliedCurrentUser = isCurrentUser;
+          });
+        }
+      },
+      child: Container(
+        alignment: alignment,
+        child: Column(
+          crossAxisAlignment:
+              isCurrentUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+          children: [
+            ChatBubble(
+              message: data["message"],
+              isCurrentUser: isCurrentUser,
+              sLightColor: sLightColor,
+              pLightColor: pLightColor,
+              pDarkColor: pDarkColor,
+              sDarkColor: sDarkColor,
+              repliedMessage: data["repliedTo"],
+              isImage: data["isImg"],
+              isVoice: data["isVoice"],
             ),
-          )
-        ],
+            Padding(
+              padding: isCurrentUser
+                  ? const EdgeInsets.only(right: 24)
+                  : const EdgeInsets.only(left: 30),
+              child: Text(
+                date.toString().substring(11, 16),
+                style: GoogleFonts.poppins(color: i, fontSize: 10),
+              ),
+            )
+          ],
+        ),
       ),
     );
   }
@@ -306,6 +418,11 @@ class _ChatPageState extends State<ChatPage> {
                   try {
                     await _chatService.sendImageMessage(
                         widget.receiverID, file!.path);
+                    setState(() {
+                      repliedMessage = "";
+                      messageReply = false;
+                      repliedCurrentUser = false;
+                    });
                     // ignore: empty_catches
                   } catch (e) {}
                 },
@@ -319,6 +436,9 @@ class _ChatPageState extends State<ChatPage> {
                     } else {
                       stopRecord();
                     }
+                    repliedMessage = "";
+                    messageReply = false;
+                    repliedCurrentUser = false;
                   });
                 },
                 child: Icon(isRecording ? Icons.stop : Icons.mic_none_sharp)),
@@ -329,7 +449,14 @@ class _ChatPageState extends State<ChatPage> {
             decoration: const BoxDecoration(
                 color: Colors.green, shape: BoxShape.circle),
             child: IconButton(
-              onPressed: sendMessage,
+              onPressed: () {
+                sendMessage();
+                setState(() {
+                  repliedMessage = "";
+                  messageReply = false;
+                  repliedCurrentUser = false;
+                });
+              },
               icon: const Icon(
                 Icons.arrow_upward,
                 color: Colors.white,

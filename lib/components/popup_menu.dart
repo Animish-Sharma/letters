@@ -1,19 +1,21 @@
 import 'package:easy_image_viewer/easy_image_viewer.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:letters/pages/chat_page.dart';
 import 'package:letters/pages/home.dart';
 import 'package:letters/services/chat/chat_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class PopUpMenu extends StatefulWidget {
-  const PopUpMenu({
+  PopUpMenu({
     super.key,
     required this.height,
     required this.widget,
     required this.callBack,
     required ChatService chatService,
   }) : _chatService = chatService;
-
+  int groupVal = 1;
   final double height;
   final ChatPage widget;
   final Function callBack;
@@ -24,6 +26,25 @@ class PopUpMenu extends StatefulWidget {
 }
 
 class _PopUpMenuState extends State<PopUpMenu> {
+  Future<Null> getSharedPrefs() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    List<String> ids = [
+      FirebaseAuth.instance.currentUser!.uid,
+      widget.widget.receiverID
+    ];
+    ids.sort();
+    String chatRoomID = ids.join("_");
+    setState(() {
+      groupVal = prefs.getInt(chatRoomID) ?? 2;
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    getSharedPrefs();
+  }
+
   int groupVal = 1;
   @override
   Widget build(BuildContext context) {
@@ -77,7 +98,7 @@ class _PopUpMenuState extends State<PopUpMenu> {
                               title: Text(widget.widget.receiverBio == ""
                                   ? "Hi! I am using Letters"
                                   : widget.widget.receiverBio),
-                              leading: const Icon(Icons.book),
+                              leading: const Icon(Icons.edit),
                             ),
                           ],
                         ),
@@ -114,7 +135,9 @@ class _PopUpMenuState extends State<PopUpMenu> {
                                 activeColor: Colors.green,
                                 value: 1,
                                 groupValue: groupVal,
-                                onChanged: (val) {
+                                onChanged: (val) async {
+                                  await widget._chatService.setThemeInt(
+                                      widget.widget.receiverID, val ?? 1);
                                   setModalState(() {
                                     widget.callBack(val);
                                     groupVal = val!;
@@ -128,7 +151,9 @@ class _PopUpMenuState extends State<PopUpMenu> {
                                 activeColor: Colors.pink,
                                 value: 2,
                                 groupValue: groupVal,
-                                onChanged: (val) {
+                                onChanged: (val) async {
+                                  await widget._chatService.setThemeInt(
+                                      widget.widget.receiverID, val ?? 2);
                                   setModalState(() {
                                     widget.callBack(val);
                                     groupVal = val!;
@@ -142,7 +167,9 @@ class _PopUpMenuState extends State<PopUpMenu> {
                                 activeColor: Colors.red,
                                 value: 3,
                                 groupValue: groupVal,
-                                onChanged: (val) {
+                                onChanged: (val) async {
+                                  await widget._chatService.setThemeInt(
+                                      widget.widget.receiverID, val ?? 2);
                                   setModalState(() {
                                     widget.callBack(val);
                                     groupVal = val!;
@@ -156,7 +183,9 @@ class _PopUpMenuState extends State<PopUpMenu> {
                                 value: 4,
                                 activeColor: Colors.purple,
                                 groupValue: groupVal,
-                                onChanged: (val) {
+                                onChanged: (val) async {
+                                  await widget._chatService.setThemeInt(
+                                      widget.widget.receiverID, val ?? 2);
                                   setModalState(() {
                                     widget.callBack(val);
                                     groupVal = val!;

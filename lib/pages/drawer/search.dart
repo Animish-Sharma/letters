@@ -5,6 +5,9 @@ import 'package:letters/components/custom_textfield.dart';
 import 'package:letters/components/user_tile.dart';
 import 'package:letters/pages/chat_page.dart';
 import 'package:letters/services/chat/chat_service.dart';
+import 'package:letters/themes/theme_provider.dart';
+import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
@@ -34,6 +37,7 @@ class _SearchPageState extends State<SearchPage> {
   @override
   Widget build(BuildContext context) {
     double width = MediaQuery.of(context).size.width;
+
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.background,
       appBar: AppBar(
@@ -88,7 +92,7 @@ class _SearchPageState extends State<SearchPage> {
                   });
                 },
               ),
-            )
+            ),
           ],
         ),
         SizedBox(height: width / 25),
@@ -104,18 +108,62 @@ class _SearchPageState extends State<SearchPage> {
         if (snapshot.hasError) {
           return const Text("Error");
         } else if (!snapshot.hasData) {
-          return Center(
-            child: Column(
-              children: [
-                SizedBox(height: width / 5),
-                Icon(Icons.person_off, size: width / 3, color: Colors.grey),
-                SizedBox(height: width / 30),
-                Text(
-                  "No User Found",
-                  style: GoogleFonts.poppins(
-                      fontSize: width / 20, color: Colors.grey.shade600),
-                )
-              ],
+          bool isDarkMode =
+              Provider.of<ThemeProvider>(context, listen: false).isDarkMode;
+          double height = MediaQuery.of(context).size.height;
+          return SingleChildScrollView(
+            child: Center(
+              child: Column(
+                children: [
+                  SizedBox(height: width / 5),
+                  Icon(Icons.search, size: width / 3, color: Colors.grey),
+                  SizedBox(height: width / 30),
+                  Text(
+                    "Search user by email",
+                    style: GoogleFonts.poppins(
+                        fontSize: width / 20, color: Colors.grey.shade600),
+                  ),
+                  SizedBox(height: height / 3),
+                  GestureDetector(
+                    onTap: () async {
+                      const url =
+                          "https://api.whatsapp.com/send?text=Download the web3 chat app Letters from https://cirious.netlify.app/apps";
+                      var encoded = Uri.parse(url);
+                      if (await canLaunchUrl(encoded)) {
+                        await launchUrl(encoded,
+                            mode: LaunchMode.externalApplication);
+                      } else {
+                        throw 'Could not launch $url';
+                      }
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(5.0),
+                      width: width / 1.7,
+                      decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey),
+                          borderRadius: BorderRadius.circular(3)),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.person_add,
+                            color: Colors.grey,
+                            size: width / 12,
+                          ),
+                          Text(
+                            "    Invite others",
+                            style: GoogleFonts.poppins(
+                                fontSize: width / 20,
+                                color: isDarkMode
+                                    ? Colors.grey.shade300
+                                    : Colors.grey.shade600),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           );
         } else if (snapshot.connectionState == ConnectionState.waiting) {

@@ -6,7 +6,6 @@ import 'package:letters/auth/auth_service.dart';
 import 'package:letters/auth/loginorregister.dart';
 import 'package:letters/components/custom_button.dart';
 import 'package:letters/components/custom_textfield.dart';
-import 'package:letters/pages/auth/login.dart';
 
 class ResetPage extends StatelessWidget {
   ResetPage({super.key});
@@ -67,7 +66,8 @@ class ResetPage extends StatelessWidget {
                             onPressed: () {
                               Navigator.of(context).pushReplacement(
                                   MaterialPageRoute(
-                                      builder: (context) => LoginOrRegister()));
+                                      builder: (context) =>
+                                          const LoginOrRegister()));
                             },
                           ),
                         ],

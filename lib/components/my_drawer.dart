@@ -127,7 +127,7 @@ class MyDrawer extends StatelessWidget {
               leading: const Icon(Icons.grid_view, color: Colors.grey),
             ),
           ),
-          SizedBox(height: height / 3.5),
+          SizedBox(height: height / 3.55),
           Padding(
             padding: const EdgeInsets.only(left: 25.0),
             child: ListTile(
