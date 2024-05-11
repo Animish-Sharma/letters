@@ -52,7 +52,7 @@ class _PopUpMenuState extends State<PopUpMenu> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8),
       child: PopupMenuButton(
-        offset: Offset(0, widget.height / 17),
+        offset: Offset(width / 20, widget.height / 17),
         itemBuilder: (context) => [
           PopupMenuItem(
             value: 0,
@@ -205,7 +205,36 @@ class _PopUpMenuState extends State<PopUpMenu> {
             ),
           ),
           PopupMenuItem(
-            value: 1,
+            onTap: () async {
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                backgroundColor: Colors.grey.shade900,
+                duration: const Duration(seconds: 1),
+                content: Row(
+                  children: <Widget>[
+                    const CircularProgressIndicator(
+                      color: Colors.blue,
+                    ),
+                    Text(
+                      "   Locking / Unlocking Chat...",
+                      style: TextStyle(
+                          color: Theme.of(context).colorScheme.background),
+                    )
+                  ],
+                ),
+              ));
+              await widget._chatService
+                  .lockUnlockChats(widget.widget.receiverID);
+              Navigator.pushReplacement(context,
+                  MaterialPageRoute(builder: (context) => const HomePage()));
+            },
+            value: 2,
+            child: const ListTile(
+              leading: Icon(Icons.lock),
+              title: Text("Lock/Unlock Chat"),
+            ),
+          ),
+          PopupMenuItem(
+            value: 2,
             child: ListTile(
               onTap: () async {
                 await widget._chatService.deleteChat(widget.widget.receiverID);

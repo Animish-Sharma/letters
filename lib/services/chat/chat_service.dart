@@ -33,6 +33,25 @@ class ChatService {
         .collection("chat_room")
         .orderBy("lastMessage", descending: true)
         .where("users", arrayContains: _auth.currentUser!.uid)
+        .where("locked", isEqualTo: false)
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs.map((doc) {
+        final user = doc.data();
+        List userId = user["users"];
+        userId.remove(_auth.currentUser!.uid);
+        String a = userId[0];
+        return a;
+      }).toList();
+    });
+  }
+
+  Stream<List<String>> getActiveLockedChats() {
+    return _firestore
+        .collection("chat_room")
+        .orderBy("lastMessage", descending: true)
+        .where("users", arrayContains: _auth.currentUser!.uid)
+        .where("locked", isEqualTo: true)
         .snapshots()
         .map((snapshot) {
       return snapshot.docs.map((doc) {
@@ -87,13 +106,20 @@ class ChatService {
   Future<void> createChatRoom(String receiverID) async {
     final String currentUserID = _auth.currentUser!.uid;
     List<String> ids = [currentUserID, receiverID];
+    Timestamp time = Timestamp.now();
     ids.sort();
     String chatRoomID = ids.join("_");
 
     final a = _firestore.collection('chat_room').doc(chatRoomID);
 
     await a.get().then((value) => !value.exists
-        ? a.set({"user": currentUserID, "otheruser": receiverID, "users": ids})
+        ? a.set({
+            "user": currentUserID,
+            "otheruser": receiverID,
+            "users": ids,
+            "lastMessage": time,
+            "locked": false
+          })
         : null);
   }
 
@@ -199,6 +225,24 @@ class ChatService {
     String chatRoomID = ids.join("_");
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt(chatRoomID, themeInt);
+  }
+
+  Future<void> lockUnlockChats(String receiverID) async {
+    List<String> ids = [_auth.currentUser!.uid, receiverID];
+    ids.sort();
+    String chatRoomID = ids.join("_");
+    QuerySnapshot<Object?> snapshot = await _firestore
+        .collection("chat_room")
+        .where("users", isEqualTo: ids)
+        .get();
+    QueryDocumentSnapshot<Object?> doc = snapshot.docs[0];
+    await _firestore.collection("chat_room").doc(chatRoomID).set({
+      "user": _auth.currentUser!.uid,
+      "otheruser": receiverID,
+      "users": ids,
+      "locked": !doc["locked"],
+      "lastMessage": doc["lastMessage"]
+    });
   }
 
   Stream<QuerySnapshot> getMessages(String userID, String otherUserID) {

@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:letters/auth/auth_service.dart';
 import 'package:letters/auth/loginorregister.dart';
 import 'package:letters/models/user.dart';
+import 'package:letters/pages/user/lockedChats.dart';
 import 'package:letters/pages/user/update.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -60,6 +61,14 @@ class _ProfilePageState extends State<ProfilePage> {
                     children: [
                       SizedBox(height: height / 20),
                       GestureDetector(
+                        onLongPress: () {
+                          Navigator.of(context).push(MaterialPageRoute(
+                              builder: (context) => LockedChats()));
+                        },
+                        onDoubleTap: () {
+                          Navigator.of(context).push(MaterialPageRoute(
+                              builder: (context) => LockedChats()));
+                        },
                         onTap: () {
                           if (data.imgUrl != "") {
                             final imageProvider =

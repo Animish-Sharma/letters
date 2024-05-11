@@ -32,7 +32,7 @@ class DevPage extends StatelessWidget {
             SizedBox(height: height / 40),
             AnimatedTextKit(
               repeatForever: true,
-              animatedTexts: [
+              animatedTexts: <AnimatedText>[
                 TypewriterAnimatedText(
                   'Animish Sharma',
                   textStyle: GoogleFonts.poppins(fontSize: width / 15),
