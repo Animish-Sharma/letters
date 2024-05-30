@@ -22,8 +22,9 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final _authService = AuthService();
-  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _searchController = TextEditingController();
   final _chatService = ChatService();
+  String searchText = "";
   void logout() async {
     await _authService.signOut();
   }
@@ -101,7 +102,7 @@ class _HomePageState extends State<HomePage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 15, 20, 0),
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
               child: Text(
                 overflow: TextOverflow.fade,
                 "Welcome ${x.name} 👋",
@@ -144,7 +145,17 @@ class _HomePageState extends State<HomePage> {
                 height: height / 12.5,
                 margin: const EdgeInsets.only(bottom: 20),
                 child: TextField(
-                  controller: _emailController,
+                  onChanged: (String s) {
+                    if (s == "") {
+                      setState(() {
+                        searchText = "";
+                      });
+                    }
+                    setState(() {
+                      searchText = s;
+                    });
+                  },
+                  controller: _searchController,
                   style: GoogleFonts.poppins(
                       fontSize: width / 24.5, color: Colors.black),
                   decoration: InputDecoration(
@@ -189,6 +200,9 @@ class _HomePageState extends State<HomePage> {
                         ConnectionState.waiting) {
                       return const Text("");
                     } else if (snapshot.data!.isEmpty) {
+                      if (_searchController.text.isNotEmpty) {
+                        return Container();
+                      }
                       return Container(
                         width: width,
                         height: height,
@@ -241,6 +255,9 @@ class _HomePageState extends State<HomePage> {
           return const Text("NO USER");
         } else if (snapshot.hasData) {
           final usr = snapshot.data;
+          if (!usr["name"].toLowerCase().contains(searchText.toLowerCase())) {
+            return const SizedBox(width: 0, height: 0);
+          }
           return GestureDetector(
             onLongPress: () {
               showDialog(
