@@ -6,6 +6,7 @@ class Message {
   final String receiverID;
   final bool isImg;
   final bool isVoice;
+  final bool read;
   final String? repliedTo;
   final String message;
   final Timestamp timestamp;
@@ -18,6 +19,7 @@ class Message {
     required this.isImg,
     this.repliedTo,
     required this.isVoice,
+    required this.read,
     required this.timestamp,
   });
   Map<String, dynamic> toMap() {
@@ -28,6 +30,7 @@ class Message {
       "isImg": isImg,
       "repliedTo": repliedTo,
       "isVoice": isVoice,
+      "read": read,
       "message": message,
       "timestamp": timestamp
     };

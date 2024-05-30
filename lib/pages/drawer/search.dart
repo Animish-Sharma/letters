@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:letters/auth/auth_service.dart';
-import 'package:letters/components/custom_textfield.dart';
-import 'package:letters/components/user_tile.dart';
+import 'package:letters/components/custom/custom_textfield.dart';
+import 'package:letters/components/chats/user_tile.dart';
+import 'package:letters/components/custom/gradient_text.dart';
+import 'package:letters/components/custom/request_dialog.dart';
 import 'package:letters/pages/chat_page.dart';
 import 'package:letters/services/chat/chat_service.dart';
 import 'package:letters/themes/theme_provider.dart';
@@ -37,7 +39,8 @@ class _SearchPageState extends State<SearchPage> {
   @override
   Widget build(BuildContext context) {
     double width = MediaQuery.of(context).size.width;
-
+    bool isDarkMode =
+        Provider.of<ThemeProvider>(context, listen: false).isDarkMode;
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.background,
       appBar: AppBar(
@@ -46,20 +49,29 @@ class _SearchPageState extends State<SearchPage> {
         centerTitle: true,
         title: const Text("Search"),
       ),
-      body: _buildUserList(width),
+      body: _buildUserList(width, isDarkMode),
     );
   }
 
-  Widget _buildUserList(double width) {
+  Widget _buildUserList(double width, bool isDarkMode) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 5),
-          child: Text(
-            "Search",
-            style: GoogleFonts.roboto(
-                color: Colors.grey, fontSize: 56, fontWeight: FontWeight.w100),
+          padding: const EdgeInsets.symmetric(horizontal: 20.0),
+          child: GradientText(
+            'Search',
+            style: TextStyle(fontSize: width / 7, fontWeight: FontWeight.w100),
+            gradient: LinearGradient(
+                colors: !isDarkMode
+                    ? [
+                        const Color(0xffFC5C7D),
+                        const Color(0xff6A82FB),
+                      ]
+                    : [
+                        const Color(0xffDAE2F8),
+                        const Color(0xffD6A4A4),
+                      ]),
           ),
         ),
         Row(
@@ -82,14 +94,18 @@ class _SearchPageState extends State<SearchPage> {
                   color: Colors.white,
                 ),
                 onPressed: () {
-                  setState(() {
-                    isClicked = true;
-                    Future.delayed(const Duration(milliseconds: 1000), () {
-                      setState(() {
-                        isClicked = false;
+                  if (_searchController.text.isNotEmpty) {
+                    setState(() {
+                      isClicked = true;
+                      Future.delayed(const Duration(milliseconds: 1000), () {
+                        setState(() {
+                          isClicked = false;
+                        });
                       });
                     });
-                  });
+                  } else {
+                    RequestDialog.show(context, "Email cannot be empty");
+                  }
                 },
               ),
             ),
@@ -119,7 +135,7 @@ class _SearchPageState extends State<SearchPage> {
                   Icon(Icons.search, size: width / 3, color: Colors.grey),
                   SizedBox(height: width / 30),
                   Text(
-                    "Search user by email",
+                    "Search User by email",
                     style: GoogleFonts.poppins(
                         fontSize: width / 20, color: Colors.grey.shade600),
                   ),
@@ -197,6 +213,7 @@ class _SearchPageState extends State<SearchPage> {
     if (userData["email"] != _authService.getUser()?.email) {
       return UserTile(
         text: userData["email"],
+        receiverID: userData["id"],
         imgUrl: userData["imgUrl"] ?? "",
         onTap: () => Navigator.of(context).push(
           MaterialPageRoute(

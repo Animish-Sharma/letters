@@ -1,9 +1,9 @@
 import 'dart:io';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import "package:letters/models/user.dart" as i;
+import 'package:onesignal_flutter/onesignal_flutter.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -17,6 +17,8 @@ class AuthService {
     try {
       UserCredential userCredential = await _auth.signInWithEmailAndPassword(
           email: email, password: password);
+      await OneSignal.login(_auth.currentUser!.uid);
+      await OneSignal.User.addTagWithKey("userId", _auth.currentUser!.uid);
       return userCredential;
     } on FirebaseAuthException catch (e) {
       throw Exception(e.code);

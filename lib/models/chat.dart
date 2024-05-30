@@ -4,31 +4,24 @@ class Chat {
   final String user;
   final String otheruser;
   final Timestamp lastMessage;
+  final String messageSent;
   final bool locked;
   final List<String> users;
-  Chat({
-    required this.user,
-    required this.otheruser,
-    required this.lastMessage,
-    required this.locked,
-    required this.users,
-  });
+  Chat(
+      {required this.user,
+      required this.otheruser,
+      required this.lastMessage,
+      required this.locked,
+      required this.users,
+      required this.messageSent});
   Map<String, dynamic> toMap() {
-    if (lastMessage == null) {
-      return {
-        "user": user,
-        "otheruser": otheruser,
-        "lastMessage": lastMessage,
-        "locked": locked,
-        "users": users,
-      };
-    }
     return {
       "user": user,
       "otheruser": otheruser,
       "lastMessage": lastMessage,
       "locked": locked,
       "users": users,
+      "messageSent": messageSent,
     };
   }
 }

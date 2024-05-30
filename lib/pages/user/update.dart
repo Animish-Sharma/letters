@@ -5,8 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:letters/auth/auth_service.dart';
-import 'package:letters/components/custom_button.dart';
-import 'package:letters/components/custom_textfield.dart';
+import 'package:letters/components/custom/custom_button.dart';
+import 'package:letters/components/custom/custom_textfield.dart';
 import 'package:letters/models/user.dart';
 import 'package:letters/pages/home.dart';
 

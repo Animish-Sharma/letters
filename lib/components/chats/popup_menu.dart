@@ -1,3 +1,5 @@
+// ignore_for_file: use_build_context_synchronously, must_be_immutable
+
 import 'package:easy_image_viewer/easy_image_viewer.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -35,7 +37,7 @@ class _PopUpMenuState extends State<PopUpMenu> {
     ids.sort();
     String chatRoomID = ids.join("_");
     setState(() {
-      groupVal = prefs.getInt(chatRoomID) ?? 2;
+      groupVal = prefs.getInt(chatRoomID) ?? 1;
     });
   }
 
@@ -238,6 +240,7 @@ class _PopUpMenuState extends State<PopUpMenu> {
             child: ListTile(
               onTap: () async {
                 await widget._chatService.deleteChat(widget.widget.receiverID);
+                // ignore: duplicate_ignore
                 // ignore: use_build_context_synchronously
                 Navigator.of(context).pushReplacement(
                     MaterialPageRoute(builder: (context) => const HomePage()));

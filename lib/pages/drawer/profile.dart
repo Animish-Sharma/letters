@@ -4,7 +4,6 @@ import 'package:easy_image_viewer/easy_image_viewer.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:letters/auth/auth_service.dart';
-import 'package:letters/auth/loginorregister.dart';
 import 'package:letters/models/user.dart';
 import 'package:letters/pages/user/lockedChats.dart';
 import 'package:letters/pages/user/update.dart';
@@ -63,11 +62,11 @@ class _ProfilePageState extends State<ProfilePage> {
                       GestureDetector(
                         onLongPress: () {
                           Navigator.of(context).push(MaterialPageRoute(
-                              builder: (context) => LockedChats()));
+                              builder: (context) => const LockedChats()));
                         },
                         onDoubleTap: () {
                           Navigator.of(context).push(MaterialPageRoute(
-                              builder: (context) => LockedChats()));
+                              builder: (context) => const LockedChats()));
                         },
                         onTap: () {
                           if (data.imgUrl != "") {

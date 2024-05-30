@@ -5,6 +5,7 @@ import 'package:letters/pages/drawer/profile.dart';
 import 'package:letters/pages/drawer/search.dart';
 import 'package:letters/pages/drawer/settings.dart';
 import 'package:letters/themes/theme_provider.dart';
+import 'package:page_transition/page_transition.dart';
 import "package:provider/provider.dart";
 
 class MyDrawer extends StatelessWidget {
@@ -64,8 +65,12 @@ class MyDrawer extends StatelessWidget {
             padding: const EdgeInsets.only(left: 25.0),
             child: ListTile(
               onTap: () {
-                Navigator.of(context).push(MaterialPageRoute(
-                    builder: (context) => const SearchPage()));
+                Navigator.of(context).push(
+                  PageTransition(
+                      duration: const Duration(milliseconds: 325),
+                      child: const SearchPage(),
+                      type: PageTransitionType.leftToRightWithFade),
+                );
               },
               title: Text(
                 "S E A R C H",
@@ -81,8 +86,13 @@ class MyDrawer extends StatelessWidget {
             padding: const EdgeInsets.only(left: 25.0),
             child: ListTile(
               onTap: () {
-                Navigator.of(context).push(MaterialPageRoute(
-                    builder: (context) => const ProfilePage()));
+                Navigator.of(context).push(
+                  PageTransition(
+                    duration: const Duration(milliseconds: 325),
+                    child: const ProfilePage(),
+                    type: PageTransitionType.leftToRightWithFade,
+                  ),
+                );
               },
               title: Text(
                 "P R O F I L E",
@@ -99,7 +109,12 @@ class MyDrawer extends StatelessWidget {
             child: ListTile(
               onTap: () {
                 Navigator.of(context).push(
-                    MaterialPageRoute(builder: (context) => SettingsPage()));
+                  PageTransition(
+                    duration: const Duration(milliseconds: 325),
+                    child: const SettingsPage(),
+                    type: PageTransitionType.leftToRightWithFade,
+                  ),
+                );
               },
               title: Text(
                 "S E T T I N G S",
@@ -116,7 +131,12 @@ class MyDrawer extends StatelessWidget {
             child: ListTile(
               onTap: () {
                 Navigator.of(context).push(
-                    MaterialPageRoute(builder: (context) => const DevPage()));
+                  PageTransition(
+                    duration: const Duration(milliseconds: 325),
+                    child: const DevPage(),
+                    type: PageTransitionType.leftToRightWithFade,
+                  ),
+                );
               },
               title: Text(
                 "D E V E L O P E R",

@@ -1,15 +1,15 @@
+// ignore_for_file: use_build_context_synchronously, must_be_immutable
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:letters/auth/auth_service.dart';
-import 'package:letters/components/chat_bubble.dart';
-import 'package:letters/components/custom_button.dart';
-import 'package:letters/components/custom_textfield.dart';
-import 'package:letters/components/popup_menu.dart';
+import 'package:letters/components/chats/chat_bubble.dart';
+import 'package:letters/components/custom/custom_textfield.dart';
+import 'package:letters/components/chats/popup_menu.dart';
+import 'package:letters/components/custom/request_dialog.dart';
 import 'package:letters/services/chat/chat_service.dart';
 import 'package:letters/themes/theme_provider.dart';
 import 'package:path_provider/path_provider.dart';
@@ -39,7 +39,7 @@ class ChatPage extends StatefulWidget {
   State<ChatPage> createState() => _ChatPageState();
 }
 
-class _ChatPageState extends State<ChatPage> {
+class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   final TextEditingController _messageController = TextEditingController();
 
   final ChatService _chatService = ChatService();
@@ -54,6 +54,7 @@ class _ChatPageState extends State<ChatPage> {
   bool messageReply = false;
   String repliedMessage = "";
   bool repliedCurrentUser = false;
+  String changeStatus = "offline";
 
   startRecord() async {
     final location = await getApplicationDocumentsDirectory();
@@ -61,6 +62,10 @@ class _ChatPageState extends State<ChatPage> {
     if (await record.hasPermission()) {
       await record.start(path: "${location.path}$name.m4a");
     }
+  }
+
+  setSeen() async {
+    await _chatService.setMessageToSeen(widget.receiverID);
   }
 
   callBack(int val) {
@@ -99,9 +104,18 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   @override
+  void setState(fn) {
+    if (mounted) {
+      super.setState(fn);
+    }
+  }
+
+  @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     getSharedPrefs();
+    setSeen();
     myFocusNode.addListener(() {
       if (myFocusNode.hasFocus) {
         Future.delayed(const Duration(milliseconds: 300), () => scrollDown());
@@ -111,6 +125,21 @@ class _ChatPageState extends State<ChatPage> {
       _createChat();
     });
     Future.delayed(const Duration(milliseconds: 300), () => scrollDown());
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    final isBg = state == AppLifecycleState.paused;
+    final isClosed = state == AppLifecycleState.detached;
+    final isScreen = state == AppLifecycleState.resumed;
+    isBg || isScreen == true || isClosed == false
+        ? setState(() {
+            changeStatus = "online";
+          })
+        : setState(() {
+            changeStatus = "offline";
+          });
   }
 
   @override
@@ -175,6 +204,8 @@ class _ChatPageState extends State<ChatPage> {
       _messageController.clear();
       await _chatService.sendMessage(widget.receiverID, x, repliedMessage);
       scrollDown();
+    } else {
+      RequestDialog.show(context, "Message Field is Empty");
     }
   }
 
@@ -199,16 +230,40 @@ class _ChatPageState extends State<ChatPage> {
               ),
             ),
             SizedBox(width: width / 40),
-            Text(widget.receiverName),
+            SizedBox(
+              width: width / 3,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(widget.receiverName),
+                  SizedBox(
+                    width: width / 10,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Container(
+                          width: width / 60,
+                          height: height / 90,
+                          decoration: BoxDecoration(
+                              color: changeStatus == "online"
+                                  ? Colors.green
+                                  : Colors.red.shade700,
+                              shape: BoxShape.circle),
+                        ),
+                        Text(
+                          changeStatus,
+                          style: TextStyle(
+                              color: Colors.grey, fontSize: width / 40),
+                        ),
+                      ],
+                    ),
+                  )
+                ],
+              ),
+            ),
           ],
         ),
         actions: <Widget>[
-          PopUpMenu(
-            height: height,
-            widget: widget,
-            chatService: _chatService,
-            callBack: callBack,
-          ),
           GestureDetector(
             onTap: () {
               showDialog(
@@ -221,10 +276,13 @@ class _ChatPageState extends State<ChatPage> {
                     );
                   });
             },
-            child: const Padding(
-              padding: EdgeInsets.only(right: 16.0),
-              child: Icon(Icons.call),
-            ),
+            child: const Icon(Icons.call),
+          ),
+          PopUpMenu(
+            height: height,
+            widget: widget,
+            chatService: _chatService,
+            callBack: callBack,
           ),
         ],
       ),
@@ -285,7 +343,7 @@ class _ChatPageState extends State<ChatPage> {
         return ListView(
           controller: _scrollController,
           children: snapshot.data!.docs
-              .map((doc) => _buildMessageItem(doc, i))
+              .map((doc) => _buildMessageItem(doc, i, isDarkMode))
               .toList(),
         );
       },
@@ -346,7 +404,7 @@ class _ChatPageState extends State<ChatPage> {
     );
   }
 
-  Widget _buildMessageItem(DocumentSnapshot doc, Color i) {
+  Widget _buildMessageItem(DocumentSnapshot doc, Color i, bool isDarkMode) {
     Color pLightColor = getpLight();
     Color sLightColor = getsLight();
     Color pDarkColor = getpDark();
@@ -374,7 +432,9 @@ class _ChatPageState extends State<ChatPage> {
               isCurrentUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
           children: [
             ChatBubble(
+              id: doc.id,
               message: data["message"],
+              receiverID: widget.receiverID,
               isCurrentUser: isCurrentUser,
               sLightColor: sLightColor,
               pLightColor: pLightColor,
@@ -388,9 +448,28 @@ class _ChatPageState extends State<ChatPage> {
               padding: isCurrentUser
                   ? const EdgeInsets.only(right: 24)
                   : const EdgeInsets.only(left: 30),
-              child: Text(
-                date.toString().substring(11, 16),
-                style: GoogleFonts.poppins(color: i, fontSize: 10),
+              child: Row(
+                mainAxisAlignment: !isCurrentUser
+                    ? MainAxisAlignment.start
+                    : MainAxisAlignment.end,
+                children: [
+                  Container(
+                    margin: const EdgeInsets.only(right: 4),
+                    child: Icon(
+                      Icons.done_all_outlined,
+                      size: 16,
+                      color: data["read"]
+                          ? Colors.blue
+                          : isDarkMode
+                              ? Colors.white
+                              : Colors.black,
+                    ),
+                  ),
+                  Text(
+                    date.toString().substring(11, 16),
+                    style: GoogleFonts.poppins(color: i, fontSize: 10),
+                  ),
+                ],
               ),
             )
           ],
@@ -406,44 +485,80 @@ class _ChatPageState extends State<ChatPage> {
       child: Row(
         children: [
           Expanded(
-              child: CustomTextField(
-            focusNode: myFocusNode,
-            hintText: "Message",
-            isPass: false,
-            icon: InkWell(
-                onTap: () async {
-                  ImagePicker imagePicker = ImagePicker();
-                  XFile? file =
-                      await imagePicker.pickImage(source: ImageSource.gallery);
-                  try {
-                    await _chatService.sendImageMessage(
-                        widget.receiverID, file!.path);
+            child: CustomTextField(
+              focusNode: myFocusNode,
+              hintText: "Message",
+              isPass: false,
+              icon: InkWell(
+                  onTap: () async {
+                    ImagePicker imagePicker = ImagePicker();
+                    XFile? file = await imagePicker.pickImage(
+                        source: ImageSource.gallery);
+                    try {
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                        backgroundColor: Colors.grey.shade900,
+                        duration: const Duration(seconds: 5),
+                        content: Row(
+                          children: <Widget>[
+                            const CircularProgressIndicator(
+                              color: Colors.blue,
+                            ),
+                            Text(
+                              "  Uploading...",
+                              style: TextStyle(
+                                  color:
+                                      Theme.of(context).colorScheme.background),
+                            )
+                          ],
+                        ),
+                      ));
+                      await _chatService.sendImageMessage(
+                          widget.receiverID, file!.path);
+                      setState(() {
+                        repliedMessage = "";
+                        messageReply = false;
+                        repliedCurrentUser = false;
+                      });
+                      // ignore: empty_catches
+                    } catch (e) {}
+                  },
+                  child: const Icon(Icons.image_outlined)),
+              suffix: InkWell(
+                  onTap: () {
                     setState(() {
+                      isRecording = !isRecording;
+                      if (isRecording) {
+                        startRecord();
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                          backgroundColor: Colors.grey.shade900,
+                          duration: const Duration(seconds: 5),
+                          content: Row(
+                            children: <Widget>[
+                              const CircularProgressIndicator(
+                                color: Colors.blue,
+                              ),
+                              Text(
+                                "  Uploading...",
+                                style: TextStyle(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .background),
+                              )
+                            ],
+                          ),
+                        ));
+                        stopRecord();
+                      }
                       repliedMessage = "";
                       messageReply = false;
                       repliedCurrentUser = false;
                     });
-                    // ignore: empty_catches
-                  } catch (e) {}
-                },
-                child: const Icon(Icons.image_outlined)),
-            suffix: InkWell(
-                onTap: () {
-                  setState(() {
-                    isRecording = !isRecording;
-                    if (isRecording) {
-                      startRecord();
-                    } else {
-                      stopRecord();
-                    }
-                    repliedMessage = "";
-                    messageReply = false;
-                    repliedCurrentUser = false;
-                  });
-                },
-                child: Icon(isRecording ? Icons.stop : Icons.mic_none_sharp)),
-            controller: _messageController,
-          )),
+                  },
+                  child: Icon(isRecording ? Icons.stop : Icons.mic_none_sharp)),
+              controller: _messageController,
+            ),
+          ),
           Container(
             margin: EdgeInsets.only(right: height / 100),
             decoration: const BoxDecoration(

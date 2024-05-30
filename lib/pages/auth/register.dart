@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:letters/auth/auth_service.dart';
-import 'package:letters/components/custom_button.dart';
-import 'package:letters/components/custom_textfield.dart';
+import 'package:letters/components/custom/custom_button.dart';
+import 'package:letters/components/custom/custom_textfield.dart';
+import 'package:letters/themes/theme_provider.dart';
+import 'package:provider/provider.dart';
 
 class Register extends StatelessWidget {
   final TextEditingController _nameController = TextEditingController();
@@ -16,6 +18,8 @@ class Register extends StatelessWidget {
   Widget build(BuildContext context) {
     double width = MediaQuery.of(context).size.width;
     double height = MediaQuery.of(context).size.height;
+    bool isDarkMode =
+        Provider.of<ThemeProvider>(context, listen: false).isDarkMode;
     final authService = AuthService();
     void register(BuildContext context) async {
       if (_pwController.text == _cpwController.text) {
@@ -46,7 +50,16 @@ class Register extends StatelessWidget {
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.background,
       body: SingleChildScrollView(
-        child: SizedBox(
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: !isDarkMode
+                  ? [const Color(0xff6DD5FA), const Color(0xffffffff)]
+                  : [const Color(0xff003049), const Color(0xfffdf0d5)],
+            ),
+          ),
           height: height,
           width: width,
           child: Column(
@@ -60,7 +73,7 @@ class Register extends StatelessWidget {
                 "Get Started !",
                 style: GoogleFonts.playfairDisplay(
                   fontSize: width / 9,
-                  color: Theme.of(context).colorScheme.inversePrimary,
+                  color: Theme.of(context).colorScheme.background,
                 ),
               ),
               const SizedBox(height: 20),
@@ -98,12 +111,16 @@ class Register extends StatelessWidget {
                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                     backgroundColor: Colors.grey.shade900,
                     duration: const Duration(seconds: 2),
-                    content: const Row(
+                    content: Row(
                       children: <Widget>[
-                        CircularProgressIndicator(
+                        const CircularProgressIndicator(
                           color: Colors.blue,
                         ),
-                        Text("  Signing-In...")
+                        Text("  Signing-In...",
+                            style: TextStyle(
+                              color:
+                                  Theme.of(context).colorScheme.inversePrimary,
+                            ))
                       ],
                     ),
                   ));

@@ -1,5 +1,6 @@
 import 'dart:io';
-
+import 'dart:convert';
+import "package:http/http.dart" as http;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -11,12 +12,24 @@ class ChatService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final Reference _ref = FirebaseStorage.instance.ref();
 
-  Stream<List<Map<String, dynamic>>> getUserStream() {
-    return _firestore.collection("Users").snapshots().map((snapshot) {
-      return snapshot.docs.map((doc) {
-        final user = doc.data();
-        return user;
-      }).toList();
+  Future<void> setMessageToSeen(String receiverID) async {
+    final String currentUserID = _auth.currentUser!.uid;
+    List<String> ids = [currentUserID, receiverID];
+    ids.sort();
+    String chatRoomID = ids.join("_");
+
+    await _firestore
+        .collection("chat_room")
+        .doc(chatRoomID)
+        .collection("Messages")
+        .where("receiverID", isEqualTo: currentUserID)
+        .where("read", isEqualTo: false)
+        .snapshots()
+        .forEach((element) async {
+      List<DocumentSnapshot> docs = element.docs;
+      for (var doc in docs) {
+        await doc.reference.update({"read": true});
+      }
     });
   }
 
@@ -91,16 +104,50 @@ class ChatService {
     });
   }
 
-  Future<void> lastMessageSent(
-      String chatRoomId, Timestamp time, String receiverID) async {
+  Future<void> lastMessageSent(String chatRoomId, Timestamp time,
+      String receiverID, String messageSent) async {
     String currentUserId = FirebaseAuth.instance.currentUser!.uid;
     List<String> users = [currentUserId, receiverID];
+    users.sort();
+    QuerySnapshot<Object?> snapshot = await _firestore
+        .collection("chat_room")
+        .where("users", isEqualTo: users)
+        .get();
+    QueryDocumentSnapshot<Object?> doc = snapshot.docs[0];
+
     await _firestore.collection("chat_room").doc(chatRoomId).set({
       "lastMessage": time,
       "user": currentUserId,
       "otheruser": receiverID,
-      "users": users
+      "users": users,
+      "sentBy": currentUserId,
+      "locked": doc["locked"],
+      "messageSent": messageSent
     });
+  }
+
+  Future<String> getLastMessage(String receiverID) async {
+    String currentUserId = FirebaseAuth.instance.currentUser!.uid;
+    List<String> users = [currentUserId, receiverID];
+    users.sort();
+    QuerySnapshot<Object?> snapshot = await _firestore
+        .collection("chat_room")
+        .where("users", isEqualTo: users)
+        .get();
+    QueryDocumentSnapshot<Object?> doc = snapshot.docs[0];
+    return doc["messageSent"];
+  }
+
+  Future<bool> lastMessageSentByUser(String receiverID) async {
+    String currentUserId = FirebaseAuth.instance.currentUser!.uid;
+    List<String> users = [currentUserId, receiverID];
+    users.sort();
+    QuerySnapshot<Object?> snapshot = await _firestore
+        .collection("chat_room")
+        .where("users", isEqualTo: users)
+        .get();
+    QueryDocumentSnapshot<Object?> doc = snapshot.docs[0];
+    return doc["sentBy"] != currentUserId ? false : true;
   }
 
   Future<void> createChatRoom(String receiverID) async {
@@ -118,7 +165,9 @@ class ChatService {
             "otheruser": receiverID,
             "users": ids,
             "lastMessage": time,
-            "locked": false
+            "locked": false,
+            "messageSent": "",
+            "sentBy": currentUserID
           })
         : null);
   }
@@ -130,6 +179,7 @@ class ChatService {
 
     Message newMessage = Message(
       senderID: currentUserID,
+      read: false,
       senderEmail: currentUserEmail,
       isVoice: false,
       receiverID: receiverID,
@@ -141,12 +191,13 @@ class ChatService {
     List<String> ids = [currentUserID, receiverID];
     ids.sort();
     String chatRoomID = ids.join("_");
-    await lastMessageSent(chatRoomID, timestamp, receiverID);
+    await lastMessageSent(chatRoomID, timestamp, receiverID, message);
     await _firestore
         .collection("chat_room")
         .doc(chatRoomID)
         .collection("Messages")
         .add(newMessage.toMap());
+    await sendNotifications(receiverID, message);
   }
 
   Future<void> sendImageMessage(String receiverID, String path) async {
@@ -162,6 +213,7 @@ class ChatService {
     Message newMessage = Message(
       senderID: currentUserID,
       senderEmail: currentUserEmail,
+      read: false,
       receiverID: receiverID,
       repliedTo: "",
       message: imgUrl,
@@ -172,12 +224,13 @@ class ChatService {
     List<String> ids = [currentUserID, receiverID];
     ids.sort();
     String chatRoomID = ids.join("_");
-    await lastMessageSent(chatRoomID, timestamp, receiverID);
+    await lastMessageSent(chatRoomID, timestamp, receiverID, "Image");
     await _firestore
         .collection("chat_room")
         .doc(chatRoomID)
         .collection("Messages")
         .add(newMessage.toMap());
+    await sendNotifications(receiverID, "Image");
   }
 
   Future<void> sendVoiceMessage(String receiverID, String path) async {
@@ -194,6 +247,7 @@ class ChatService {
       senderID: currentUserID,
       senderEmail: currentUserEmail,
       receiverID: receiverID,
+      read: false,
       message: url,
       repliedTo: "",
       isImg: false,
@@ -203,12 +257,13 @@ class ChatService {
     List<String> ids = [currentUserID, receiverID];
     ids.sort();
     String chatRoomID = ids.join("_");
-    await lastMessageSent(chatRoomID, timestamp, receiverID);
+    await lastMessageSent(chatRoomID, timestamp, receiverID, "Voice Message");
     await _firestore
         .collection("chat_room")
         .doc(chatRoomID)
         .collection("Messages")
         .add(newMessage.toMap());
+    await sendNotifications(receiverID, "Voice Message");
   }
 
   Future<int> getThemeInt(String receiverID) async {
@@ -240,9 +295,27 @@ class ChatService {
       "user": _auth.currentUser!.uid,
       "otheruser": receiverID,
       "users": ids,
+      "sentBy": doc["sentBy"],
+      "messageSent": doc["messageSent"],
       "locked": !doc["locked"],
       "lastMessage": doc["lastMessage"]
     });
+  }
+
+  Future<void> deleteMessage(String id, String receiverID) async {
+    List<String> ids = [_auth.currentUser!.uid, receiverID];
+    ids.sort();
+    String chatRoomID = ids.join("_");
+    await _firestore
+        .collection("chat_room")
+        .doc(chatRoomID)
+        .collection("Messages")
+        .doc(id)
+        .delete();
+    await _firestore
+        .collection("chat_room")
+        .doc(chatRoomID)
+        .update({"messageSent": "Message Deleted"});
   }
 
   Stream<QuerySnapshot> getMessages(String userID, String otherUserID) {
@@ -255,5 +328,48 @@ class ChatService {
         .collection("Messages")
         .orderBy("timestamp")
         .snapshots();
+  }
+
+  Future<void> sendNotifications(String receiverID, String message) async {
+    const String appKey = "MTFiZDg0YWItZWEwNy00NzdiLWE1ODgtZTQ5MmNiNzZjYTYw";
+    const String appId = "4b3b447f-4915-4439-b3d8-0da767e76e77";
+    QuerySnapshot<Object?> snapshot = await _firestore
+        .collection("Users")
+        .where("id", isEqualTo: receiverID)
+        .get();
+    QueryDocumentSnapshot<Object?> doc = snapshot.docs[0];
+    final Map<String, dynamic> requestBody = {
+      "included_segments": ["Active Users"],
+      'filters': [
+        {"field": "tag", "key": "userId", "relation": "=", "value": receiverID}
+      ],
+      "headings": {"en": doc["name"]},
+      "contents": {"en": message},
+      "ios_interruption_level": "critical",
+      "app_id": appId,
+      "target_channel": "push",
+      "android_channel_id": "fea8bcbd-7301-4559-ad3d-78e6d0f5345b"
+    };
+    final Map<String, String> headers = {
+      "Authorization": "Basic $appKey",
+      "accept": "application/json",
+      "content-type": "application/json"
+    };
+
+    try {
+      final http.Response response = await http.post(
+          Uri.parse("https://onesignal.com/api/v1/notifications"),
+          headers: headers,
+          body: jsonEncode(requestBody));
+      if (response.statusCode == 200) {
+        print(response.body);
+        print("Notification sent successfully");
+      } else {
+        print("An error occurred");
+      }
+    } catch (e) {
+      print("Error sending notifications");
+      print(e);
+    }
   }
 }

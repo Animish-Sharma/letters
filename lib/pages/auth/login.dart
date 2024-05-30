@@ -4,9 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:letters/auth/auth_service.dart';
-import 'package:letters/components/custom_button.dart';
-import "package:letters/components/custom_textfield.dart";
+import 'package:letters/components/custom/custom_button.dart';
+import "package:letters/components/custom/custom_textfield.dart";
 import 'package:letters/pages/auth/reset.dart';
+import 'package:letters/themes/theme_provider.dart';
+import 'package:page_transition/page_transition.dart';
+import 'package:provider/provider.dart';
 
 class LoginPage extends StatelessWidget {
   final TextEditingController _emailController = TextEditingController();
@@ -17,6 +20,8 @@ class LoginPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     double width = MediaQuery.of(context).size.width;
+    bool isDarkMode =
+        Provider.of<ThemeProvider>(context, listen: false).isDarkMode;
     double height = MediaQuery.of(context).size.height;
     void login(BuildContext context) async {
       final authServivce = AuthService();
@@ -36,7 +41,16 @@ class LoginPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.background,
       body: SingleChildScrollView(
-        child: SizedBox(
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: !isDarkMode
+                  ? [const Color(0xFFff6e7f), const Color(0xffbfe9ff)]
+                  : [const Color(0xffbdc3c7), const Color(0xff2c3e50)],
+            ),
+          ),
           width: width,
           height: height,
           child: Column(
@@ -71,16 +85,19 @@ class LoginPage extends StatelessWidget {
                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                     backgroundColor: Colors.grey.shade900,
                     duration: const Duration(seconds: 2),
-                    content: const Row(
+                    content: Row(
                       children: <Widget>[
-                        CircularProgressIndicator(
+                        const CircularProgressIndicator(
                           color: Colors.blue,
                         ),
-                        Text("  Signing-In...")
+                        Text("  Signing-In...",
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.background,
+                            ))
                       ],
                     ),
                   ));
-                  Future.delayed(const Duration(seconds: 1), () {
+                  Future.delayed(const Duration(milliseconds: 50), () {
                     login(context);
                   });
                 },
@@ -98,7 +115,9 @@ class LoginPage extends StatelessWidget {
                       style: GoogleFonts.roboto(
                         fontWeight: FontWeight.w700,
                         fontSize: 17,
-                        color: Colors.purple.shade600,
+                        color: !isDarkMode
+                            ? Colors.purple.shade600
+                            : Colors.blue.shade300,
                       ),
                     ),
                   )
@@ -111,15 +130,18 @@ class LoginPage extends StatelessWidget {
                   const Text("Forgot your password ? "),
                   GestureDetector(
                     onTap: () {
-                      Navigator.of(context).push(
-                          MaterialPageRoute(builder: (context) => ResetPage()));
+                      Navigator.of(context).push(PageTransition(
+                          type: PageTransitionType.rightToLeft,
+                          child: ResetPage()));
                     },
                     child: Text(
                       "Reset Password",
                       style: GoogleFonts.roboto(
                         fontWeight: FontWeight.w700,
                         fontSize: 17,
-                        color: Colors.purple.shade600,
+                        color: !isDarkMode
+                            ? Colors.purple.shade600
+                            : Colors.blue.shade300,
                       ),
                     ),
                   )

@@ -4,22 +4,35 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:letters/auth/auth_service.dart';
 import 'package:letters/auth/loginorregister.dart';
-import 'package:letters/components/custom_button.dart';
-import 'package:letters/components/custom_textfield.dart';
+import 'package:letters/components/custom/custom_button.dart';
+import 'package:letters/components/custom/custom_textfield.dart';
+import 'package:letters/themes/theme_provider.dart';
+import 'package:provider/provider.dart';
 
 class ResetPage extends StatelessWidget {
   ResetPage({super.key});
   final TextEditingController _emailController = TextEditingController();
   @override
   Widget build(BuildContext context) {
+    bool isDarkMode =
+        Provider.of<ThemeProvider>(context, listen: false).isDarkMode;
     double width = MediaQuery.of(context).size.width;
     double height = MediaQuery.of(context).size.height;
     final authService = AuthService();
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.background,
       body: SingleChildScrollView(
-        child: SizedBox(
+        child: Container(
           height: height,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: !isDarkMode
+                  ? [const Color(0xFFc2e59c), const Color(0xff64b3f4)]
+                  : [const Color(0xff240046), const Color(0xffc77dff)],
+            ),
+          ),
           width: width,
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -39,9 +52,12 @@ class ResetPage extends StatelessWidget {
               ),
               Padding(
                 padding: EdgeInsets.only(right: width / 6),
-                child: const Text(
+                child: Text(
                   "*Email will only be sent to valid registered emails",
-                  style: TextStyle(color: Colors.grey),
+                  style: TextStyle(
+                      color: !isDarkMode
+                          ? Colors.grey.shade700
+                          : Colors.grey.shade300),
                 ),
               ),
               SizedBox(height: height / 20),
