@@ -48,7 +48,7 @@ class LoginPage extends StatelessWidget {
               end: Alignment.bottomRight,
               colors: !isDarkMode
                   ? [const Color(0xFFff6e7f), const Color(0xffbfe9ff)]
-                  : [const Color(0xffbdc3c7), const Color(0xff2c3e50)],
+                  : [const Color(0xffe0b1cb), const Color(0xff5e548e)],
             ),
           ),
           width: width,
@@ -85,15 +85,12 @@ class LoginPage extends StatelessWidget {
                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                     backgroundColor: Colors.grey.shade900,
                     duration: const Duration(seconds: 2),
-                    content: Row(
+                    content: const Row(
                       children: <Widget>[
-                        const CircularProgressIndicator(
+                        CircularProgressIndicator(
                           color: Colors.blue,
                         ),
-                        Text("  Signing-In...",
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.background,
-                            ))
+                        Text("  Signing-In...")
                       ],
                     ),
                   ));

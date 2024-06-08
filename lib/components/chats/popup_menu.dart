@@ -83,8 +83,12 @@ class _PopUpMenuState extends State<PopUpMenu> {
                                 child: ClipOval(
                                   child: widget.widget.imgUrl == ""
                                       ? Image.asset("assets/profile.png")
-                                      : Image.network(widget.widget.imgUrl,
-                                          height: widget.height),
+                                      : Image.network(
+                                          widget.widget.imgUrl,
+                                          height: width,
+                                          width: width,
+                                          fit: BoxFit.fitWidth,
+                                        ),
                                 ),
                               ),
                             ),
@@ -204,6 +208,34 @@ class _PopUpMenuState extends State<PopUpMenu> {
             child: const ListTile(
               leading: Icon(Icons.workspaces),
               title: Text("Themes"),
+            ),
+          ),
+          PopupMenuItem(
+            onTap: () async {
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                backgroundColor: Colors.grey.shade900,
+                duration: const Duration(seconds: 1),
+                content: Row(
+                  children: <Widget>[
+                    const CircularProgressIndicator(
+                      color: Colors.blue,
+                    ),
+                    Text(
+                      "   Pinning / UnPinning Chat...",
+                      style: TextStyle(
+                          color: Theme.of(context).colorScheme.inversePrimary),
+                    )
+                  ],
+                ),
+              ));
+              await widget._chatService.pinUnPinChats(widget.widget.receiverID);
+              Navigator.pushReplacement(context,
+                  MaterialPageRoute(builder: (context) => const HomePage()));
+            },
+            value: 2,
+            child: const ListTile(
+              leading: Icon(Icons.push_pin),
+              title: Text("Pin Chats"),
             ),
           ),
           PopupMenuItem(

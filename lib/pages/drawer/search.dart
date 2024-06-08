@@ -135,7 +135,7 @@ class _SearchPageState extends State<SearchPage> {
                   Icon(Icons.search, size: width / 3, color: Colors.grey),
                   SizedBox(height: width / 30),
                   Text(
-                    "Search User by email",
+                    "Search Users by their Email",
                     style: GoogleFonts.poppins(
                         fontSize: width / 20, color: Colors.grey.shade600),
                   ),

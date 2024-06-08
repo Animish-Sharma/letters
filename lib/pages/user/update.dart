@@ -118,7 +118,19 @@ class _UpdatePageState extends State<UpdatePage> {
                       onTap: () async {
                         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                           backgroundColor: Colors.grey.shade900,
-                          duration: const Duration(seconds: 2),
+                          duration: const Duration(seconds: 3),
+                          content: const Row(
+                            children: <Widget>[
+                              CircularProgressIndicator(
+                                color: Colors.blue,
+                              ),
+                              Text("  Uploading Image...")
+                            ],
+                          ),
+                        ));
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                          backgroundColor: Colors.grey.shade900,
+                          duration: const Duration(seconds: 3),
                           content: const Row(
                             children: <Widget>[
                               CircularProgressIndicator(
@@ -138,7 +150,8 @@ class _UpdatePageState extends State<UpdatePage> {
                                     ? ""
                                     : data.bio
                                 : _bioController.text.trimRight(),
-                            _image == null ? data.imgUrl : _image!.path);
+                            _image == File("") ? "" : _image!.path,
+                            _image == File("") ? false : true);
 
                         Navigator.of(context).pushReplacement(MaterialPageRoute(
                             builder: (context) => const HomePage()));

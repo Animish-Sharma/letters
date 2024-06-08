@@ -72,44 +72,7 @@ class SettingsPage extends StatelessWidget {
               ),
             ),
           ),
-          SizedBox(height: height / 1.75),
-          GestureDetector(
-            onTap: () async {
-              const url =
-                  "https://api.whatsapp.com/send?text=Download the web3 chat app Letters from https://cirious.netlify.app/apps";
-              var encoded = Uri.parse(url);
-              if (await canLaunchUrl(encoded)) {
-                await launchUrl(encoded, mode: LaunchMode.externalApplication);
-              } else {
-                throw 'Could not launch $url';
-              }
-            },
-            child: Container(
-              padding: const EdgeInsets.all(5.0),
-              width: width / 1.7,
-              decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey),
-                  borderRadius: BorderRadius.circular(3)),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.person_add,
-                    color: Colors.grey,
-                    size: width / 12,
-                  ),
-                  Text(
-                    "    Invite others",
-                    style: GoogleFonts.poppins(
-                        fontSize: width / 20,
-                        color: isDarkMode
-                            ? Colors.grey.shade300
-                            : Colors.grey.shade600),
-                  ),
-                ],
-              ),
-            ),
-          ),
+          // SizedBox(height: height / 40),
           // GestureDetector(
           //   onTap: () {
           //     showDialog(
@@ -170,6 +133,44 @@ class SettingsPage extends StatelessWidget {
           //     ),
           //   ),
           // ),
+          SizedBox(height: height / 1.7),
+          GestureDetector(
+            onTap: () async {
+              const url =
+                  "https://api.whatsapp.com/send?text=Download the web3 chat app Letters from https://cirious.netlify.app/apps";
+              var encoded = Uri.parse(url);
+              if (await canLaunchUrl(encoded)) {
+                await launchUrl(encoded, mode: LaunchMode.externalApplication);
+              } else {
+                throw 'Could not launch $url';
+              }
+            },
+            child: Container(
+              padding: const EdgeInsets.all(5.0),
+              width: width / 1.7,
+              decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey),
+                  borderRadius: BorderRadius.circular(3)),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.person_add,
+                    color: Colors.grey,
+                    size: width / 12,
+                  ),
+                  Text(
+                    "    Invite others",
+                    style: GoogleFonts.poppins(
+                        fontSize: width / 20,
+                        color: isDarkMode
+                            ? Colors.grey.shade300
+                            : Colors.grey.shade600),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );

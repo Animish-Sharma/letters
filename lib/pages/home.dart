@@ -1,12 +1,12 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:letters/auth/auth_service.dart';
 import 'package:letters/components/custom/gradient_text.dart';
 import 'package:letters/components/custom/my_drawer.dart';
-import 'package:letters/components/chats/user_tile.dart';
+import 'package:letters/components/home/allChats.dart';
+import 'package:letters/components/home/pinnedChats.dart';
 import 'package:letters/models/user.dart';
-import 'package:letters/pages/chat_page.dart';
 import 'package:letters/pages/drawer/profile.dart';
 import 'package:letters/services/chat/chat_service.dart';
 import 'package:letters/themes/theme_provider.dart';
@@ -25,6 +25,7 @@ class _HomePageState extends State<HomePage> {
   final TextEditingController _searchController = TextEditingController();
   final _chatService = ChatService();
   String searchText = "";
+
   void logout() async {
     await _authService.signOut();
   }
@@ -36,7 +37,14 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  User x = User(name: "", email: "email");
+  @override
+  void setState(fn) {
+    if (mounted) {
+      super.setState(fn);
+    }
+  }
+
+  User x = User(name: "User", email: "email");
 
   @override
   void initState() {
@@ -47,6 +55,7 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     double height = MediaQuery.of(context).size.height;
+    double width = MediaQuery.of(context).size.width;
     String a = x.imgUrl ?? "";
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.background,
@@ -64,7 +73,7 @@ class _HomePageState extends State<HomePage> {
                   PageTransition(
                     duration: const Duration(milliseconds: 325),
                     child: const ProfilePage(),
-                    type: PageTransitionType.leftToRightWithFade,
+                    type: PageTransitionType.rightToLeftWithFade,
                   ),
                 );
               },
@@ -75,8 +84,10 @@ class _HomePageState extends State<HomePage> {
                   child: a == ""
                       ? Image.asset("assets/profile.png")
                       : Image.network(
+                          fit: BoxFit.fitWidth,
+                          width: width,
+                          height: width,
                           a,
-                          height: height,
                         ),
                 ),
               ),
@@ -143,7 +154,7 @@ class _HomePageState extends State<HomePage> {
                 alignment: Alignment.center,
                 width: width / 1.15,
                 height: height / 12.5,
-                margin: const EdgeInsets.only(bottom: 20),
+                margin: const EdgeInsets.only(bottom: 8),
                 child: TextField(
                   onChanged: (String s) {
                     if (s == "") {
@@ -160,7 +171,7 @@ class _HomePageState extends State<HomePage> {
                       fontSize: width / 24.5, color: Colors.black),
                   decoration: InputDecoration(
                       contentPadding: const EdgeInsets.all(16),
-                      hintText: "Search Messages",
+                      hintText: "Search or start a Message",
                       hintStyle: GoogleFonts.poppins(
                           color: const Color(0xff7f7f7f),
                           fontWeight: FontWeight.w300),
@@ -190,192 +201,30 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
             ),
-            Flexible(
-              child: StreamBuilder(
-                  stream: _chatService.getActiveChats(),
-                  builder: (context, snapshot) {
-                    if (snapshot.hasError) {
-                      return const Text("Error");
-                    } else if (snapshot.connectionState ==
-                        ConnectionState.waiting) {
-                      return const Text("");
-                    } else if (snapshot.data!.isEmpty) {
-                      if (_searchController.text.isNotEmpty) {
-                        return Container();
-                      }
-                      return Container(
-                        width: width,
-                        height: height,
-                        margin: EdgeInsets.only(top: height / 6),
-                        child: Column(
-                          children: <Widget>[
-                            Icon(
-                              Icons.close_rounded,
-                              size: height / 7,
-                              color: !isDarkMode
-                                  ? Colors.red.shade500
-                                  : Colors.red.shade300,
-                            ),
-                            SizedBox(height: height / 60),
-                            Text("No Chats Found",
-                                style: GoogleFonts.inter(
-                                    fontSize: height / 30,
-                                    fontWeight: FontWeight.w300))
-                          ],
-                        ),
-                      );
-                    } else {
-                      return ListView(
-                        children: snapshot.data!
-                            .map(
-                                (userData) => _buildUserItem(userData, context))
-                            .toList(),
-                      );
-                    }
-                  }),
+            const PinnedChats(),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Row(
+                children: [
+                  Icon(
+                    FontAwesomeIcons.commentDots,
+                    size: width / 20,
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                    child: Text(
+                      "All Chats",
+                      style: GoogleFonts.inter(
+                          letterSpacing: .6, fontSize: width / 20),
+                    ),
+                  ),
+                ],
+              ),
             ),
+            AllChats(searchText: searchText)
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildUserItem(String id, BuildContext context) {
-    double width = MediaQuery.of(context).size.width;
-    bool isDarkMode =
-        Provider.of<ThemeProvider>(context, listen: false).isDarkMode;
-    return FutureBuilder(
-      future: FirebaseFirestore.instance.collection("Users").doc(id).get(),
-      builder: ((context, AsyncSnapshot snapshot) {
-        if (snapshot.hasError) {
-          return const Text("Error");
-        } else if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Text("LOADING....");
-        } else if (!snapshot.hasData) {
-          return const Text("NO USER");
-        } else if (snapshot.hasData) {
-          final usr = snapshot.data;
-          if (!usr["name"].toLowerCase().contains(searchText.toLowerCase())) {
-            return const SizedBox(width: 0, height: 0);
-          }
-          return GestureDetector(
-            onLongPress: () {
-              showDialog(
-                  context: context,
-                  builder: (context) => SizedBox(
-                        width: width / 1.1,
-                        child: AlertDialog(
-                          title: Text(
-                            usr["name"],
-                          ),
-                          actions: <Widget>[
-                            ListTile(
-                              title: const Text("Open"),
-                              onTap: () => Navigator.push(
-                                context,
-                                PageTransition(
-                                  type: PageTransitionType.bottomToTop,
-                                  child: ChatPage(
-                                    receiverName: usr["name"],
-                                    receiverEmail: usr["email"],
-                                    receiverID: usr["id"],
-                                    imgUrl: usr["imgUrl"],
-                                    receiverBio: usr["bio"],
-                                  ),
-                                ),
-                              ),
-                            ),
-                            ListTile(
-                              title: const Text("Lock/Unlock Chat"),
-                              onTap: () async {
-                                ScaffoldMessenger.of(context)
-                                    .showSnackBar(SnackBar(
-                                  backgroundColor: Colors.grey.shade900,
-                                  duration: const Duration(seconds: 2),
-                                  content: Row(
-                                    children: <Widget>[
-                                      const CircularProgressIndicator(
-                                        color: Colors.blue,
-                                      ),
-                                      Text(
-                                        "  Locking/Unlocking Chats...",
-                                        style: TextStyle(
-                                            color: Theme.of(context)
-                                                .colorScheme
-                                                .primary),
-                                      )
-                                    ],
-                                  ),
-                                ));
-                                Navigator.of(context).pop();
-                                await _chatService
-                                    .lockUnlockChats(snapshot.data["id"]);
-                              },
-                            ),
-                            ListTile(
-                              title: const Text("Delete Chat"),
-                              onTap: () async {
-                                ScaffoldMessenger.of(context)
-                                    .showSnackBar(SnackBar(
-                                  backgroundColor: Colors.grey.shade900,
-                                  duration: const Duration(seconds: 2),
-                                  content: Row(
-                                    children: <Widget>[
-                                      const CircularProgressIndicator(
-                                        color: Colors.blue,
-                                      ),
-                                      Text(
-                                        "  Deleting Chats...",
-                                        style: TextStyle(
-                                            color: Theme.of(context)
-                                                .colorScheme
-                                                .primary),
-                                      )
-                                    ],
-                                  ),
-                                ));
-                                Navigator.of(context).pop();
-                                await _chatService
-                                    .deleteChat(snapshot.data["id"]);
-                              },
-                            ),
-                            TextButton(
-                                onPressed: () {
-                                  Navigator.of(context).pop();
-                                },
-                                child: Text(
-                                  "Back",
-                                  style: GoogleFonts.inter(
-                                      color: isDarkMode
-                                          ? Colors.blue.shade300
-                                          : Colors.blue),
-                                ))
-                          ],
-                        ),
-                      ));
-            },
-            child: UserTile(
-              text: usr["name"],
-              receiverID: id,
-              imgUrl: usr['imgUrl'],
-              onTap: () => Navigator.push(
-                context,
-                PageTransition(
-                  type: PageTransitionType.bottomToTop,
-                  child: ChatPage(
-                    receiverName: usr["name"],
-                    receiverEmail: usr["email"],
-                    receiverID: usr["id"],
-                    imgUrl: usr["imgUrl"],
-                    receiverBio: usr["bio"],
-                  ),
-                ),
-              ),
-            ),
-          );
-        }
-        return Container();
-      }),
     );
   }
 }

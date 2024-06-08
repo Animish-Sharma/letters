@@ -30,7 +30,7 @@ class ResetPage extends StatelessWidget {
               end: Alignment.bottomRight,
               colors: !isDarkMode
                   ? [const Color(0xFFc2e59c), const Color(0xff64b3f4)]
-                  : [const Color(0xff240046), const Color(0xffc77dff)],
+                  : [const Color(0xff6369D1), const Color(0xffc77dff)],
             ),
           ),
           width: width,

@@ -5,7 +5,19 @@ import "package:shared_preferences/shared_preferences.dart";
 
 class ThemeProvider extends ChangeNotifier {
   ThemeData _themeData = lightMode;
-  ThemeData get themeData => _themeData;
+  void _getPrefItems() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String a = prefs.getString('theme') ?? "";
+    a == "dark" ? _themeData = darkMode : _themeData = lightMode;
+    notifyListeners();
+  }
+
+  ThemeData getThemeData() {
+    _getPrefItems();
+    return _themeData;
+  }
+
+  ThemeData get themeData => getThemeData();
   bool get isDarkMode => _themeData == darkMode;
 
   set themeData(ThemeData themeData) {

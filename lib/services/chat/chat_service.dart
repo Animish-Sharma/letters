@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:convert';
+import 'dart:math' as Math;
 import "package:http/http.dart" as http;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -47,6 +48,26 @@ class ChatService {
         .orderBy("lastMessage", descending: true)
         .where("users", arrayContains: _auth.currentUser!.uid)
         .where("locked", isEqualTo: false)
+        .where("pinned", isEqualTo: false)
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs.map((doc) {
+        final user = doc.data();
+        List userId = user["users"];
+        userId.remove(_auth.currentUser!.uid);
+        String a = userId[0];
+        return a;
+      }).toList();
+    });
+  }
+
+  Stream<List<String>> getActivePinnedChats() {
+    return _firestore
+        .collection("chat_room")
+        .orderBy("lastMessage", descending: true)
+        .where("users", arrayContains: _auth.currentUser!.uid)
+        .where("locked", isEqualTo: false)
+        .where("pinned", isEqualTo: true)
         .snapshots()
         .map((snapshot) {
       return snapshot.docs.map((doc) {
@@ -122,6 +143,7 @@ class ChatService {
       "users": users,
       "sentBy": currentUserId,
       "locked": doc["locked"],
+      "pinned": doc["pinned"],
       "messageSent": messageSent
     });
   }
@@ -147,7 +169,7 @@ class ChatService {
         .where("users", isEqualTo: users)
         .get();
     QueryDocumentSnapshot<Object?> doc = snapshot.docs[0];
-    return doc["sentBy"] != currentUserId ? false : true;
+    return doc["sentBy"] as String != currentUserId ? false : true;
   }
 
   Future<void> createChatRoom(String receiverID) async {
@@ -165,6 +187,7 @@ class ChatService {
             "otheruser": receiverID,
             "users": ids,
             "lastMessage": time,
+            "pinned": false,
             "locked": false,
             "messageSent": "",
             "sentBy": currentUserID
@@ -182,7 +205,9 @@ class ChatService {
       read: false,
       senderEmail: currentUserEmail,
       isVoice: false,
+      isMap: false,
       receiverID: receiverID,
+      isDoc: false,
       message: message,
       isImg: false,
       repliedTo: repliedTo,
@@ -214,9 +239,11 @@ class ChatService {
       senderID: currentUserID,
       senderEmail: currentUserEmail,
       read: false,
+      isMap: false,
       receiverID: receiverID,
       repliedTo: "",
       message: imgUrl,
+      isDoc: false,
       isVoice: false,
       isImg: true,
       timestamp: timestamp,
@@ -231,6 +258,76 @@ class ChatService {
         .collection("Messages")
         .add(newMessage.toMap());
     await sendNotifications(receiverID, "Image");
+  }
+
+  Future<void> sendDocumentMessage(
+      String receiverID, String path, String fExt, String fName) async {
+    final String currentUserID = _auth.currentUser!.uid;
+    final String currentUserEmail = _auth.currentUser!.email!;
+    final Timestamp timestamp = Timestamp.now();
+    final String uniqueName =
+        'Letters Document ${timestamp.microsecondsSinceEpoch.toString()}$fExt';
+    Reference refImg = _ref.child("documents");
+    Reference refDocUpload = refImg.child(uniqueName);
+    await refDocUpload.putFile(File(path));
+    String docUrl = await refDocUpload.getDownloadURL();
+    Message newMessage = Message(
+      senderID: currentUserID,
+      senderEmail: currentUserEmail,
+      fName: fName,
+      read: false,
+      isMap: false,
+      receiverID: receiverID,
+      repliedTo: "",
+      message: docUrl,
+      isVoice: false,
+      isImg: false,
+      isDoc: true,
+      timestamp: timestamp,
+    );
+    List<String> ids = [currentUserID, receiverID];
+    ids.sort();
+    String chatRoomID = ids.join("_");
+    await lastMessageSent(chatRoomID, timestamp, receiverID, "Document");
+    await _firestore
+        .collection("chat_room")
+        .doc(chatRoomID)
+        .collection("Messages")
+        .add(newMessage.toMap());
+    await sendNotifications(receiverID, "📄 Document");
+  }
+
+  Future<void> sendLocationAsMessage(
+      String receiverID, double lat, double long) async {
+    final String currentUserID = _auth.currentUser!.uid;
+    final String currentUserEmail = _auth.currentUser!.email!;
+    final Timestamp timestamp = Timestamp.now();
+
+    Message newMessage = Message(
+      senderID: currentUserID,
+      senderEmail: currentUserEmail,
+      read: false,
+      isMap: true,
+      isDoc: false,
+      receiverID: receiverID,
+      repliedTo: "",
+      message: "",
+      lat: lat,
+      long: long,
+      isVoice: false,
+      isImg: false,
+      timestamp: timestamp,
+    );
+    List<String> ids = [currentUserID, receiverID];
+    ids.sort();
+    String chatRoomID = ids.join("_");
+    await lastMessageSent(chatRoomID, timestamp, receiverID, "Location");
+    await _firestore
+        .collection("chat_room")
+        .doc(chatRoomID)
+        .collection("Messages")
+        .add(newMessage.toMap());
+    await sendNotifications(receiverID, "📍 Location");
   }
 
   Future<void> sendVoiceMessage(String receiverID, String path) async {
@@ -248,7 +345,9 @@ class ChatService {
       senderEmail: currentUserEmail,
       receiverID: receiverID,
       read: false,
+      isDoc: false,
       message: url,
+      isMap: false,
       repliedTo: "",
       isImg: false,
       isVoice: true,
@@ -298,6 +397,28 @@ class ChatService {
       "sentBy": doc["sentBy"],
       "messageSent": doc["messageSent"],
       "locked": !doc["locked"],
+      "pinned": doc["pinned"],
+      "lastMessage": doc["lastMessage"]
+    });
+  }
+
+  Future<void> pinUnPinChats(String receiverID) async {
+    List<String> ids = [_auth.currentUser!.uid, receiverID];
+    ids.sort();
+    String chatRoomID = ids.join("_");
+    QuerySnapshot<Object?> snapshot = await _firestore
+        .collection("chat_room")
+        .where("users", isEqualTo: ids)
+        .get();
+    QueryDocumentSnapshot<Object?> doc = snapshot.docs[0];
+    await _firestore.collection("chat_room").doc(chatRoomID).set({
+      "user": _auth.currentUser!.uid,
+      "otheruser": receiverID,
+      "users": ids,
+      "sentBy": doc["sentBy"],
+      "messageSent": doc["messageSent"],
+      "locked": doc["locked"],
+      "pinned": !doc["pinned"],
       "lastMessage": doc["lastMessage"]
     });
   }
@@ -335,7 +456,7 @@ class ChatService {
     const String appId = "4b3b447f-4915-4439-b3d8-0da767e76e77";
     QuerySnapshot<Object?> snapshot = await _firestore
         .collection("Users")
-        .where("id", isEqualTo: receiverID)
+        .where("id", isEqualTo: _auth.currentUser!.uid)
         .get();
     QueryDocumentSnapshot<Object?> doc = snapshot.docs[0];
     final Map<String, dynamic> requestBody = {

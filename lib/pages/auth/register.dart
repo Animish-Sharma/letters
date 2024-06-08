@@ -57,7 +57,7 @@ class Register extends StatelessWidget {
               end: Alignment.bottomRight,
               colors: !isDarkMode
                   ? [const Color(0xff6DD5FA), const Color(0xffffffff)]
-                  : [const Color(0xff003049), const Color(0xfffdf0d5)],
+                  : [const Color(0xffc9184a), const Color(0xffffccd5)],
             ),
           ),
           height: height,
@@ -73,7 +73,7 @@ class Register extends StatelessWidget {
                 "Get Started !",
                 style: GoogleFonts.playfairDisplay(
                   fontSize: width / 9,
-                  color: Theme.of(context).colorScheme.background,
+                  color: Theme.of(context).colorScheme.inversePrimary,
                 ),
               ),
               const SizedBox(height: 20),
@@ -111,16 +111,12 @@ class Register extends StatelessWidget {
                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                     backgroundColor: Colors.grey.shade900,
                     duration: const Duration(seconds: 2),
-                    content: Row(
+                    content: const Row(
                       children: <Widget>[
-                        const CircularProgressIndicator(
+                        CircularProgressIndicator(
                           color: Colors.blue,
                         ),
-                        Text("  Signing-In...",
-                            style: TextStyle(
-                              color:
-                                  Theme.of(context).colorScheme.inversePrimary,
-                            ))
+                        Text("  Signing-In...")
                       ],
                     ),
                   ));

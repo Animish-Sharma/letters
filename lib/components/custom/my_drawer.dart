@@ -15,7 +15,6 @@ class MyDrawer extends StatelessWidget {
   Widget build(BuildContext context) {
     void logout() async {
       final authService = AuthService();
-
       await authService.signOut();
     }
 
@@ -151,7 +150,9 @@ class MyDrawer extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(left: 25.0),
             child: ListTile(
-              onTap: logout,
+              onTap: () async {
+                logout();
+              },
               title: Text(
                 "L O G O U T",
                 style: TextStyle(

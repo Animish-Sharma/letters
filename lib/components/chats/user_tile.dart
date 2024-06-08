@@ -79,7 +79,9 @@ class _UserTileState extends State<UserTile> {
                         ? Image.asset("assets/profile.png", height: height)
                         : Image.network(
                             widget.imgUrl,
+                            fit: BoxFit.fitWidth,
                             width: width,
+                            height: width,
                           )),
               ),
             ),
@@ -96,6 +98,7 @@ class _UserTileState extends State<UserTile> {
                         width: width / 1.65,
                         child: Text(
                           overflow: TextOverflow.fade,
+                          maxLines: 1,
                           messageSent,
                           style: GoogleFonts.poppins(
                               fontSize: 11,

@@ -2,12 +2,15 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_file_downloader/flutter_file_downloader.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:letters/components/custom/scaff_mess.dart';
 import 'package:letters/services/chat/chat_service.dart';
 import 'dart:io';
 import 'package:flutter_file_dialog/flutter_file_dialog.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class RequestDialog {
   static show(BuildContext context, String error) {
@@ -56,8 +59,10 @@ class RequestDialog {
   }
 
   static drop(BuildContext context, String id, String message,
-      String receiverID, bool isImg, bool isCurrentUser) {
-    final title = message.contains("firebasestorage") ? "Image" : message;
+      String receiverID, bool isImg, bool isCurrentUser, bool isVoice) {
+    final title =
+        message.contains("firebasestorage") ? "Image / Voice" : message;
+
     final height = MediaQuery.of(context).size.height;
     final chatService = ChatService();
     downloadImg(String url) async {
@@ -84,24 +89,121 @@ class RequestDialog {
               overflow: TextOverflow.ellipsis,
               style: GoogleFonts.roboto(color: Colors.white))),
       actions: <Widget>[
+        !isVoice
+            ? ListTile(
+                mouseCursor: SystemMouseCursors.click,
+                onTap: () async {
+                  !isImg
+                      ? await Clipboard.setData(ClipboardData(text: message))
+                          .then((_) => ScaffoldMessenger.of(context)
+                              .showSnackBar(const SnackBar(
+                                  showCloseIcon: true,
+                                  content:
+                                      Text("Message copied to clipboard"))))
+                      : (
+                          ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  showCloseIcon: true,
+                                  content: Text("Downloading Image"))),
+                          downloadImg(message)
+                        );
+                  Navigator.of(context).pop();
+                },
+                title: Text(!isImg ? "Copy Message" : "Download Image",
+                    style: GoogleFonts.roboto(color: Colors.white)),
+              )
+            : const SizedBox(height: 0, width: 0),
+        isCurrentUser
+            ? ListTile(
+                mouseCursor: SystemMouseCursors.click,
+                onTap: () async {
+                  Navigator.of(context).pop();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text("Deleting Message"),
+                    ),
+                  );
+                  await chatService.deleteMessage(id, receiverID);
+                },
+                title: Text("Delete Message",
+                    style: GoogleFonts.roboto(color: Colors.white)),
+              )
+            : const SizedBox(
+                height: 0,
+                width: 0,
+              ),
+        TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            child: Text(
+              "Back",
+              style: GoogleFonts.inter(color: Colors.blue.shade300),
+            ))
+      ],
+    );
+
+    showDialog(
+      context: context,
+      builder: (BuildContext ctx) {
+        return dropdown;
+      },
+    );
+  }
+
+  static dropOther(
+      BuildContext context,
+      String id,
+      double? lat,
+      double? long,
+      String? fName,
+      String? url,
+      String receiverID,
+      bool isMap,
+      bool isCurrentUser) {
+    final title = isMap ? "Location" : "Document";
+
+    final height = MediaQuery.of(context).size.height;
+    final chatService = ChatService();
+
+    AlertDialog dropdown = AlertDialog(
+      backgroundColor: const Color(0xff1e1e24),
+      title: SizedBox(
+          height: height / 30,
+          child: Text(title,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.roboto(color: Colors.white))),
+      actions: <Widget>[
         ListTile(
           mouseCursor: SystemMouseCursors.click,
           onTap: () async {
-            !isImg
-                ? await Clipboard.setData(ClipboardData(text: message)).then(
-                    (_) => ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                            showCloseIcon: true,
-                            content: Text("Message copied to clipboard"))))
-                : (
+            if (isMap) {
+              var url = "https://www.google.com/maps/@$lat,$long,11z";
+              var encoded = Uri.parse(url);
+              if (await canLaunchUrl(encoded)) {
+                await launchUrl(encoded);
+              } else {
+                throw 'Could not launch $url';
+              }
+            } else {
+              ScaffMess.messanger(context, "Downloading", 3);
+              FileDownloader.downloadFile(
+                  url: url!,
+                  name: fName!,
+                  onProgress: (String? fileName, double progress) {},
+                  onDownloadCompleted: (String path) {
                     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                        showCloseIcon: true,
-                        content: Text("Downloading Image"))),
-                    downloadImg(message)
-                  );
+                      content: Text("File Saved in Downloads"),
+                    ));
+                  },
+                  onDownloadError: (String error) {
+                    RequestDialog.show(context,
+                        "An error occurred while downloading this file");
+                  });
+            }
             Navigator.of(context).pop();
           },
-          title: Text(!isImg ? "Copy Message" : "Download Image",
+          title: Text(isMap ? "Open in Google Maps" : "Download Document",
               style: GoogleFonts.roboto(color: Colors.white)),
         ),
         isCurrentUser

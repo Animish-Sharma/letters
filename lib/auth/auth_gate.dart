@@ -1,6 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:letters/auth/loginorregister.dart';
+import 'package:letters/pages/auth/choose.dart';
 import 'package:letters/pages/home.dart';
 
 class AuthGate extends StatelessWidget {
@@ -15,7 +15,7 @@ class AuthGate extends StatelessWidget {
           if (snapshot.hasData) {
             return const HomePage();
           } else {
-            return const LoginOrRegister();
+            return const ChoosePage();
           }
         },
       ),

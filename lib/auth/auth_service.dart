@@ -54,12 +54,15 @@ class AuthService {
   }
 
   Future<void> updateUser(
-      String id, String name, String bio, String path) async {
-    final String uniqueName = _auth.currentUser!.uid.toString();
-    Reference refImg = _storeRef.child("profile images");
-    Reference refImgUplaod = refImg.child(uniqueName);
-    await refImgUplaod.putFile(File(path));
-    String imgUrl = await refImgUplaod.getDownloadURL();
+      String id, String name, String bio, String path, bool newImg) async {
+    String imgUrl = path;
+    if (newImg) {
+      final String uniqueName = _auth.currentUser!.uid.toString();
+      Reference refImg = _storeRef.child("profile images");
+      Reference refImgUplaod = refImg.child(uniqueName);
+      await refImgUplaod.putFile(File(path));
+      imgUrl = await refImgUplaod.getDownloadURL();
+    }
     i.User a = i.User(
       name: name,
       bio: bio,
@@ -75,10 +78,13 @@ class AuthService {
     try {
       UserCredential userCredential = await _auth
           .createUserWithEmailAndPassword(email: email, password: password);
-      _firestore
-          .collection("Users")
-          .doc(userCredential.user!.uid)
-          .set({"id": userCredential.user!.uid, "name": name, "email": email});
+      _firestore.collection("Users").doc(userCredential.user!.uid).set({
+        "id": userCredential.user!.uid,
+        "name": name,
+        "email": email,
+        "imgUrl": "",
+        "bio": "Hi! I am using Letters."
+      });
       return userCredential;
     } on FirebaseAuthException catch (e) {
       throw Exception(e.code);

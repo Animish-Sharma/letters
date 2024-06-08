@@ -1,22 +1,25 @@
 // ignore_for_file: use_build_context_synchronously, must_be_immutable
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:letters/auth/auth_service.dart';
 import 'package:letters/components/chats/chat_bubble.dart';
+import 'package:letters/components/chats/input_list.dart';
 import 'package:letters/components/custom/custom_textfield.dart';
 import 'package:letters/components/chats/popup_menu.dart';
 import 'package:letters/components/custom/request_dialog.dart';
+import 'package:letters/components/custom/scaff_mess.dart';
 import 'package:letters/services/chat/chat_service.dart';
 import 'package:letters/themes/theme_provider.dart';
 import 'package:path_provider/path_provider.dart';
 import "package:provider/provider.dart";
 import 'package:record/record.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import "dart:math";
 import 'package:uuid/uuid.dart';
 
 class ChatPage extends StatefulWidget {
@@ -55,6 +58,21 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   String repliedMessage = "";
   bool repliedCurrentUser = false;
   String changeStatus = "offline";
+  String currentDate = "";
+  final _numberToMonth = {
+    1: "Jan",
+    2: "Feb",
+    3: "Mar",
+    4: "Apr",
+    5: "May",
+    6: "Jun",
+    7: "Jul",
+    8: "Aug",
+    9: "Sep",
+    10: "Oct",
+    11: "Nov",
+    12: "Dec"
+  };
 
   startRecord() async {
     final location = await getApplicationDocumentsDirectory();
@@ -82,12 +100,73 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     await _chatService.sendVoiceMessage(widget.receiverID, path);
   }
 
-  _createChat() async {
-    await _chatService.createChatRoom(widget.receiverID);
+  uploadImage() async {
+    ImagePicker imagePicker = ImagePicker();
+    XFile? file = await imagePicker.pickImage(source: ImageSource.gallery);
+    try {
+      ScaffMess.messanger(context, "Uploading", 3);
+      await _chatService.sendImageMessage(widget.receiverID, file!.path);
+      setState(() {
+        repliedMessage = "";
+        messageReply = false;
+        repliedCurrentUser = false;
+      });
+      // ignore: empty_catches
+    } catch (e) {}
   }
 
-  getThemeInt() async {
-    return await _chatService.getThemeInt(widget.receiverID);
+  uploadDocument() async {
+    final result = await FilePicker.platform.pickFiles();
+    if (result != null) {
+      String fname = result.files.first.name;
+      String fileExt = fname.substring(fname.lastIndexOf('.'));
+      ScaffMess.messanger(context, "Uploading", 4);
+      await _chatService.sendDocumentMessage(
+          widget.receiverID, result.files.first.path!, fileExt, fname);
+      setState(() {
+        repliedMessage = "";
+        messageReply = false;
+        repliedCurrentUser = false;
+      });
+    } else {
+      RequestDialog.show(context, "An Error Occurred");
+    }
+  }
+
+  getLocation() async {
+    bool isServicesEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!isServicesEnabled) {
+      return RequestDialog.show(
+          context, "Please enable GPS to use this feature");
+    }
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        return RequestDialog.show(
+            context, "Allow GPS Permission to send location");
+      }
+    }
+    if (permission == LocationPermission.deniedForever) {
+      return null;
+    }
+    try {
+      ScaffMess.messanger(context, "Locating User", 5);
+      Position a = await Geolocator.getCurrentPosition();
+
+      await _chatService.sendLocationAsMessage(
+          widget.receiverID, a.latitude, a.longitude);
+      setState(() {
+        repliedMessage = "";
+        messageReply = false;
+        repliedCurrentUser = false;
+      });
+      // ignore: empty_catches
+    } catch (e) {}
+  }
+
+  _createChat() async {
+    await _chatService.createChatRoom(widget.receiverID);
   }
 
   Future<Null> getSharedPrefs() async {
@@ -186,18 +265,6 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     return const Color(0xff455a64);
   }
 
-  String getMessage() {
-    List list = [
-      "message1",
-      "message2",
-      "message3",
-      "message4",
-    ];
-    final random = Random();
-    final randomItem = list[random.nextInt(list.length)];
-    return randomItem;
-  }
-
   void sendMessage() async {
     if (_messageController.text.isNotEmpty) {
       String x = _messageController.text;
@@ -214,10 +281,33 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     double height = MediaQuery.of(context).size.height;
     double width = MediaQuery.of(context).size.width;
+    bool isDarkMode =
+        Provider.of<ThemeProvider>(context, listen: false).isDarkMode;
     return Scaffold(
       appBar: AppBar(
         titleSpacing: 0,
         backgroundColor: Colors.transparent,
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            borderRadius: const BorderRadius.all(Radius.circular(30)),
+            gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: !isDarkMode
+                    ? <Color>[
+                        const Color(0xffffd6ff),
+                        const Color(0xffe7c6ff),
+                        const Color(0xffc8b6ff),
+                        const Color(0xffb8c0ff),
+                        const Color(0xffbbd0ff),
+                      ]
+                    : [
+                        const Color(0xff22223b),
+                        const Color(0xff4a4e69),
+                        const Color(0xff9a8c98),
+                      ]),
+          ),
+        ),
         foregroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Row(
           children: [
@@ -226,7 +316,12 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
               child: ClipOval(
                 child: widget.imgUrl == ""
                     ? Image.asset("assets/profile.png")
-                    : Image.network(widget.imgUrl, height: height),
+                    : Image.network(
+                        widget.imgUrl,
+                        fit: BoxFit.fitWidth,
+                        width: width,
+                        height: width,
+                      ),
               ),
             ),
             SizedBox(width: width / 40),
@@ -253,7 +348,9 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                         Text(
                           changeStatus,
                           style: TextStyle(
-                              color: Colors.grey, fontSize: width / 40),
+                              color:
+                                  Theme.of(context).colorScheme.inversePrimary,
+                              fontSize: width / 35),
                         ),
                       ],
                     ),
@@ -264,20 +361,6 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
           ],
         ),
         actions: <Widget>[
-          GestureDetector(
-            onTap: () {
-              showDialog(
-                  context: context,
-                  builder: (context) {
-                    return const AlertDialog(
-                      title: Text("Coming Soon"),
-                      content: Text(
-                          "This feature will soon be available to all users, right now it is being tested. \nRegards, \nAnimish Sharma"),
-                    );
-                  });
-            },
-            child: const Icon(Icons.call),
-          ),
           PopUpMenu(
             height: height,
             widget: widget,
@@ -288,6 +371,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       ),
       body: Column(
         children: <Widget>[
+          const SizedBox(height: 8),
           Expanded(child: _buildMessageList(context)),
           messageReply
               ? _buildReplyMessage(repliedMessage, repliedCurrentUser, context)
@@ -301,7 +385,6 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   Widget _buildMessageList(BuildContext context) {
     double width = MediaQuery.of(context).size.width;
     double height = MediaQuery.of(context).size.height;
-    final name = getMessage();
     String senderID = _authService.getUser()!.uid;
     bool isDarkMode =
         Provider.of<ThemeProvider>(context, listen: false).isDarkMode;
@@ -312,29 +395,31 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
         if (snapshot.hasError) {
           return const Text("Error");
         } else if (snapshot.hasData && snapshot.data!.docs.isEmpty) {
-          return SizedBox(
-            width: width,
-            height: height,
-            child: Column(
-              children: [
-                Container(
-                  margin: EdgeInsets.only(top: width / 10),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(20.0),
-                    child: SizedBox(
-                      width: width / 1.5,
-                      child: Image.asset("assets/$name.gif"),
+          return SingleChildScrollView(
+            child: SizedBox(
+              width: width,
+              height: height,
+              child: Column(
+                children: [
+                  Container(
+                    margin: EdgeInsets.only(top: width / 10),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(20.0),
+                      child: SizedBox(
+                        width: width / 1.5,
+                        child: Image.asset("assets/message4.gif"),
+                      ),
                     ),
                   ),
-                ),
-                SizedBox(height: height / 40),
-                Text(
-                  "Say Hi! to ${widget.receiverName}",
-                  style: GoogleFonts.poppins(
-                      fontSize: width / 18,
-                      color: Theme.of(context).colorScheme.primary),
-                ),
-              ],
+                  SizedBox(height: height / 40),
+                  Text(
+                    "Say Hi! to ${widget.receiverName}",
+                    style: GoogleFonts.poppins(
+                        fontSize: width / 18,
+                        color: Theme.of(context).colorScheme.primary),
+                  ),
+                ],
+              ),
             ),
           );
         } else if (snapshot.connectionState == ConnectionState.waiting) {
@@ -409,9 +494,20 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     Color sLightColor = getsLight();
     Color pDarkColor = getpDark();
     Color sDarkColor = getsDark();
+    bool newDate = false;
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
     bool isCurrentUser = data["senderID"] == _authService.getUser()!.uid;
     final date = data["timestamp"].toDate();
+    String nowDate = "${date.day} ${_numberToMonth[date.month]} ${date.year}";
+    if (currentDate == "") {
+      currentDate = nowDate;
+      newDate = true;
+    } else if (currentDate != nowDate) {
+      currentDate = nowDate;
+      newDate = true;
+    } else {
+      newDate = false;
+    }
     final alignment =
         isCurrentUser ? Alignment.centerRight : Alignment.centerLeft;
     return GestureDetector(
@@ -431,14 +527,40 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
           crossAxisAlignment:
               isCurrentUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
           children: [
+            newDate
+                ? Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 6, horizontal: 12),
+                      margin: const EdgeInsets.symmetric(
+                          vertical: 4, horizontal: 0),
+                      decoration: BoxDecoration(
+                          color: isDarkMode
+                              ? Colors.grey.shade600
+                              : Colors.grey.shade200,
+                          borderRadius: BorderRadius.circular(8)),
+                      child: Text(nowDate,
+                          style: GoogleFonts.dmSans(
+                              fontSize: 12.5,
+                              color: isDarkMode
+                                  ? Colors.grey.shade100
+                                  : Colors.grey.shade700)),
+                    ),
+                  )
+                : const SizedBox(width: 0, height: 0),
             ChatBubble(
               id: doc.id,
               message: data["message"],
               receiverID: widget.receiverID,
               isCurrentUser: isCurrentUser,
               sLightColor: sLightColor,
+              isDoc: data["isDoc"],
               pLightColor: pLightColor,
               pDarkColor: pDarkColor,
+              isMap: data["isMap"],
+              lat: data["lat"] ?? 0,
+              long: data["long"] ?? 0,
+              fName: data["fName"] ?? "",
               sDarkColor: sDarkColor,
               repliedMessage: data["repliedTo"],
               isImage: data["isImg"],
@@ -489,40 +611,11 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
               focusNode: myFocusNode,
               hintText: "Message",
               isPass: false,
-              icon: InkWell(
-                  onTap: () async {
-                    ImagePicker imagePicker = ImagePicker();
-                    XFile? file = await imagePicker.pickImage(
-                        source: ImageSource.gallery);
-                    try {
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                        backgroundColor: Colors.grey.shade900,
-                        duration: const Duration(seconds: 5),
-                        content: Row(
-                          children: <Widget>[
-                            const CircularProgressIndicator(
-                              color: Colors.blue,
-                            ),
-                            Text(
-                              "  Uploading...",
-                              style: TextStyle(
-                                  color:
-                                      Theme.of(context).colorScheme.background),
-                            )
-                          ],
-                        ),
-                      ));
-                      await _chatService.sendImageMessage(
-                          widget.receiverID, file!.path);
-                      setState(() {
-                        repliedMessage = "";
-                        messageReply = false;
-                        repliedCurrentUser = false;
-                      });
-                      // ignore: empty_catches
-                    } catch (e) {}
-                  },
-                  child: const Icon(Icons.image_outlined)),
+              icon: InputList(
+                uploadImage: uploadImage,
+                getLocation: getLocation,
+                uploadDoc: uploadDocument,
+              ),
               suffix: InkWell(
                   onTap: () {
                     setState(() {
@@ -530,24 +623,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                       if (isRecording) {
                         startRecord();
                       } else {
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                          backgroundColor: Colors.grey.shade900,
-                          duration: const Duration(seconds: 5),
-                          content: Row(
-                            children: <Widget>[
-                              const CircularProgressIndicator(
-                                color: Colors.blue,
-                              ),
-                              Text(
-                                "  Uploading...",
-                                style: TextStyle(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .background),
-                              )
-                            ],
-                          ),
-                        ));
+                        ScaffMess.messanger(context, "Uploading", 4);
                         stopRecord();
                       }
                       repliedMessage = "";

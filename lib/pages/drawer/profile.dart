@@ -31,6 +31,13 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   @override
+  void setState(fn) {
+    if (mounted) {
+      super.setState(fn);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     double width = MediaQuery.of(context).size.width;
     double height = MediaQuery.of(context).size.height;
@@ -45,7 +52,7 @@ class _ProfilePageState extends State<ProfilePage> {
             height: height,
             width: width,
             child: FutureBuilder(
-              future: user,
+              future: _authService.getUserInfo(),
               builder: (BuildContext context, AsyncSnapshot snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return Text(
@@ -83,7 +90,9 @@ class _ProfilePageState extends State<ProfilePage> {
                                 ? Image.asset("assets/profile.png")
                                 : Image.network(
                                     data.imgUrl,
-                                    height: height,
+                                    fit: BoxFit.fitWidth,
+                                    width: width,
+                                    height: width,
                                     loadingBuilder: (BuildContext context,
                                         Widget child,
                                         ImageChunkEvent? loadingProgress) {
