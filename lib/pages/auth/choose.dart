@@ -60,13 +60,7 @@ class ChoosePage extends StatelessWidget {
                       speed: const Duration(milliseconds: 75),
                     ),
                     TyperAnimatedText(
-                      '',
-                      textStyle: GoogleFonts.poppins(
-                          fontSize: width / 18, color: Colors.white),
-                      speed: const Duration(milliseconds: 75),
-                    ),
-                    TyperAnimatedText(
-                      '- talk to your Loved Ones',
+                      'Change the way you -',
                       textStyle: GoogleFonts.poppins(
                           fontSize: width / 18, color: Colors.white),
                       speed: const Duration(milliseconds: 75),

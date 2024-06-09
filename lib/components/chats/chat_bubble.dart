@@ -430,9 +430,13 @@ class _ChatBubbleState extends State<ChatBubble> {
                                           child: Icon(
                                             FontAwesomeIcons.fileInvoice,
                                             size: width / 20,
-                                            color: isDarkMode
-                                                ? Colors.grey.shade400
-                                                : Colors.grey.shade200,
+                                            color: !widget.isCurrentUser
+                                                ? isDarkMode
+                                                    ? Colors.white
+                                                    : Colors.black
+                                                : isDarkMode
+                                                    ? Colors.grey.shade400
+                                                    : Colors.grey.shade200,
                                           ),
                                         ),
                                         ConstrainedBox(
@@ -443,8 +447,10 @@ class _ChatBubbleState extends State<ChatBubble> {
                                             widget.fName!,
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
-                                            style: const TextStyle(
-                                                color: Colors.white),
+                                            style: TextStyle(
+                                                color: isDarkMode
+                                                    ? Colors.white
+                                                    : Colors.black),
                                           ),
                                         ),
                                         Padding(
@@ -453,9 +459,13 @@ class _ChatBubbleState extends State<ChatBubble> {
                                           child: Icon(
                                             size: width / 16,
                                             FontAwesomeIcons.circleDown,
-                                            color: isDarkMode
-                                                ? Colors.grey.shade400
-                                                : Colors.grey.shade200,
+                                            color: !widget.isCurrentUser
+                                                ? isDarkMode
+                                                    ? Colors.white
+                                                    : Colors.black
+                                                : isDarkMode
+                                                    ? Colors.grey.shade400
+                                                    : Colors.grey.shade200,
                                           ),
                                         )
                                       ],

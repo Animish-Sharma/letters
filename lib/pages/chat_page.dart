@@ -14,6 +14,7 @@ import 'package:letters/components/custom/custom_textfield.dart';
 import 'package:letters/components/chats/popup_menu.dart';
 import 'package:letters/components/custom/request_dialog.dart';
 import 'package:letters/components/custom/scaff_mess.dart';
+import 'package:letters/func/color_selector.dart';
 import 'package:letters/services/chat/chat_service.dart';
 import 'package:letters/themes/theme_provider.dart';
 import 'package:path_provider/path_provider.dart';
@@ -237,34 +238,6 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     }
   }
 
-  Color getpLight() {
-    if (widget.themeInt == 1) return const Color(0xff4caf50);
-    if (widget.themeInt == 2) return const Color(0xff29b6f6);
-    if (widget.themeInt == 3) return Colors.red;
-    return Colors.purple;
-  }
-
-  Color getpDark() {
-    if (widget.themeInt == 1) return const Color(0xff2e7d32);
-    if (widget.themeInt == 2) return const Color(0xff1565c0);
-    if (widget.themeInt == 3) return const Color(0xffd32f2f);
-    return Colors.purple;
-  }
-
-  Color getsLight() {
-    if (widget.themeInt == 1) return const Color(0xffd6d6d6);
-    if (widget.themeInt == 2) return const Color(0xfff8bbd0);
-    if (widget.themeInt == 3) return const Color(0xffffca28);
-    return const Color(0xffb0bec5);
-  }
-
-  Color getsDark() {
-    if (widget.themeInt == 1) return const Color(0xff424242);
-    if (widget.themeInt == 2) return const Color(0xffec407A);
-    if (widget.themeInt == 3) return const Color(0xffff6f00);
-    return const Color(0xff455a64);
-  }
-
   void sendMessage() async {
     if (_messageController.text.isNotEmpty) {
       String x = _messageController.text;
@@ -284,6 +257,9 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     bool isDarkMode =
         Provider.of<ThemeProvider>(context, listen: false).isDarkMode;
     return Scaffold(
+      backgroundColor: isDarkMode
+          ? getBackDark(widget.themeInt)[0]
+          : getBackLight(widget.themeInt)[0],
       appBar: AppBar(
         titleSpacing: 0,
         backgroundColor: Colors.transparent,
@@ -291,21 +267,12 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
           decoration: BoxDecoration(
             borderRadius: const BorderRadius.all(Radius.circular(30)),
             gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: !isDarkMode
-                    ? <Color>[
-                        const Color(0xffffd6ff),
-                        const Color(0xffe7c6ff),
-                        const Color(0xffc8b6ff),
-                        const Color(0xffb8c0ff),
-                        const Color(0xffbbd0ff),
-                      ]
-                    : [
-                        const Color(0xff22223b),
-                        const Color(0xff4a4e69),
-                        const Color(0xff9a8c98),
-                      ]),
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: !isDarkMode
+                  ? getBackLight(widget.themeInt)
+                  : getBackDark(widget.themeInt),
+            ),
           ),
         ),
         foregroundColor: Theme.of(context).colorScheme.inversePrimary,
@@ -369,15 +336,27 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
           ),
         ],
       ),
-      body: Column(
-        children: <Widget>[
-          const SizedBox(height: 8),
-          Expanded(child: _buildMessageList(context)),
-          messageReply
-              ? _buildReplyMessage(repliedMessage, repliedCurrentUser, context)
-              : Container(),
-          _buildUserInput(context)
-        ],
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: isDarkMode
+                ? getBackDark(widget.themeInt)
+                : getBackLight(widget.themeInt),
+          ),
+        ),
+        child: Column(
+          children: <Widget>[
+            const SizedBox(height: 8),
+            Expanded(child: _buildMessageList(context)),
+            messageReply
+                ? _buildReplyMessage(
+                    repliedMessage, repliedCurrentUser, context)
+                : Container(),
+            _buildUserInput(context)
+          ],
+        ),
       ),
     );
   }
@@ -490,10 +469,10 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   }
 
   Widget _buildMessageItem(DocumentSnapshot doc, Color i, bool isDarkMode) {
-    Color pLightColor = getpLight();
-    Color sLightColor = getsLight();
-    Color pDarkColor = getpDark();
-    Color sDarkColor = getsDark();
+    Color pLightColor = getpLight(widget.themeInt);
+    Color sLightColor = getsLight(widget.themeInt);
+    Color pDarkColor = getpDark(widget.themeInt);
+    Color sDarkColor = getsDark(widget.themeInt);
     bool newDate = false;
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
     bool isCurrentUser = data["senderID"] == _authService.getUser()!.uid;
@@ -516,7 +495,13 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
         if (det.delta.dx > sensitivity) {
           setState(() {
             messageReply = true;
-            repliedMessage = data["message"];
+            repliedMessage = data["isMap"]
+                ? "Location"
+                : data["isDoc"]
+                    ? data["fName"]
+                    : data["isImg"]
+                        ? "Image"
+                        : data["message"];
             repliedCurrentUser = isCurrentUser;
           });
         }

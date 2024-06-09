@@ -22,7 +22,7 @@ class InputList extends StatelessWidget {
           BoxConstraints.expand(width: width / 1.25, height: height / 4.25),
       child: TextButton.icon(
           onPressed: null,
-          icon: const Icon(FontAwesomeIcons.paperclip),
+          icon: const Icon(Icons.link),
           label: const SizedBox(width: 0, height: 0)),
       itemBuilder: (BuildContext context) {
         return [
