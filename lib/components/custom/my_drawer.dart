@@ -1,5 +1,7 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:letters/auth/auth_service.dart';
+import 'package:letters/pages/drawer/assistant.dart';
 import 'package:letters/pages/drawer/dev.dart';
 import 'package:letters/pages/drawer/profile.dart';
 import 'package:letters/pages/drawer/search.dart';
@@ -7,10 +9,10 @@ import 'package:letters/pages/drawer/settings.dart';
 import 'package:letters/themes/theme_provider.dart';
 import 'package:page_transition/page_transition.dart';
 import "package:provider/provider.dart";
+import 'package:responsive_sizer/responsive_sizer.dart';
 
 class MyDrawer extends StatelessWidget {
-  const MyDrawer({super.key});
-
+  MyDrawer({super.key});
   @override
   Widget build(BuildContext context) {
     void logout() async {
@@ -22,6 +24,7 @@ class MyDrawer extends StatelessWidget {
         Provider.of<ThemeProvider>(context, listen: false).isDarkMode;
     double width = MediaQuery.of(context).size.width;
     double height = MediaQuery.of(context).size.height;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
     return Drawer(
       backgroundColor: Theme.of(context).colorScheme.background,
       child: Column(
@@ -59,7 +62,7 @@ class MyDrawer extends StatelessWidget {
               leading: const Icon(Icons.home, color: Colors.grey),
             ),
           ),
-          SizedBox(height: height / 80),
+          SizedBox(height: Adaptive.h(1.2)),
           Padding(
             padding: const EdgeInsets.only(left: 25.0),
             child: ListTile(
@@ -80,7 +83,29 @@ class MyDrawer extends StatelessWidget {
               leading: const Icon(Icons.search, color: Colors.grey),
             ),
           ),
-          SizedBox(height: height / 80),
+          SizedBox(height: Adaptive.h(1.2)),
+          Padding(
+            padding: const EdgeInsets.only(left: 25.0),
+            child: ListTile(
+              onTap: () {
+                Navigator.of(context).push(
+                  PageTransition(
+                    duration: const Duration(milliseconds: 325),
+                    child: Assistant(receiverID: _auth.currentUser!.uid),
+                    type: PageTransitionType.leftToRightWithFade,
+                  ),
+                );
+              },
+              title: Text(
+                "A S S I S T A N T",
+                style: TextStyle(
+                    color: Theme.of(context).colorScheme.inversePrimary,
+                    fontWeight: FontWeight.w500),
+              ),
+              leading: const Icon(Icons.chat_bubble, color: Colors.grey),
+            ),
+          ),
+          SizedBox(height: Adaptive.h(1.2)),
           Padding(
             padding: const EdgeInsets.only(left: 25.0),
             child: ListTile(
@@ -102,7 +127,7 @@ class MyDrawer extends StatelessWidget {
               leading: const Icon(Icons.person, color: Colors.grey),
             ),
           ),
-          SizedBox(height: height / 80),
+          SizedBox(height: Adaptive.h(1.2)),
           Padding(
             padding: const EdgeInsets.only(left: 25.0),
             child: ListTile(
@@ -124,29 +149,29 @@ class MyDrawer extends StatelessWidget {
               leading: const Icon(Icons.settings, color: Colors.grey),
             ),
           ),
-          SizedBox(height: height / 80),
-          Padding(
-            padding: const EdgeInsets.only(left: 25.0),
-            child: ListTile(
-              onTap: () {
-                Navigator.of(context).push(
-                  PageTransition(
-                    duration: const Duration(milliseconds: 325),
-                    child: const DevPage(),
-                    type: PageTransitionType.leftToRightWithFade,
-                  ),
-                );
-              },
-              title: Text(
-                "D E V E L O P E R",
-                style: TextStyle(
-                    color: Theme.of(context).colorScheme.inversePrimary,
-                    fontWeight: FontWeight.w500),
-              ),
-              leading: const Icon(Icons.grid_view, color: Colors.grey),
-            ),
-          ),
-          SizedBox(height: height / 3.55),
+          // SizedBox(height: Adaptive.h(1.2)),
+          // Padding(
+          //   padding: const EdgeInsets.only(left: 25.0),
+          //   child: ListTile(
+          //     onTap: () {
+          //       Navigator.of(context).push(
+          //         PageTransition(
+          //           duration: const Duration(milliseconds: 325),
+          //           child: const DevPage(),
+          //           type: PageTransitionType.leftToRightWithFade,
+          //         ),
+          //       );
+          //     },
+          //     title: Text(
+          //       "D E V E L O P E R",
+          //       style: TextStyle(
+          //           color: Theme.of(context).colorScheme.inversePrimary,
+          //           fontWeight: FontWeight.w500),
+          //     ),
+          //     leading: const Icon(Icons.grid_view, color: Colors.grey),
+          //   ),
+          // ),
+         SizedBox(height: Adaptive.h(1.2)),
           Padding(
             padding: const EdgeInsets.only(left: 25.0),
             child: ListTile(

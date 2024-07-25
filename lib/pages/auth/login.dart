@@ -1,5 +1,6 @@
 // ignore_for_file: unnecessary_import, use_build_context_synchronously
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -7,6 +8,7 @@ import 'package:letters/auth/auth_service.dart';
 import 'package:letters/components/custom/custom_button.dart';
 import "package:letters/components/custom/custom_textfield.dart";
 import 'package:letters/pages/auth/reset.dart';
+import 'package:letters/pages/home.dart';
 import 'package:letters/themes/theme_provider.dart';
 import 'package:page_transition/page_transition.dart';
 import 'package:provider/provider.dart';
@@ -29,6 +31,16 @@ class LoginPage extends StatelessWidget {
       try {
         await authServivce.signInWithEmailandPassword(
             _emailController.text.trim(), _pwController.text);
+        if (FirebaseAuth.instance.currentUser != null) {
+          Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (context) => const HomePage()));
+        } else {
+          showDialog(
+              context: context,
+              builder: (context) => AlertDialog(
+                    title: Text("Login Failed for some reason"),
+                  ));
+        }
       } catch (e) {
         showDialog(
             context: context,

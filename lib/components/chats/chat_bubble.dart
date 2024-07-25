@@ -12,6 +12,7 @@ import 'package:letters/components/custom/scaff_mess.dart';
 import 'package:letters/themes/theme_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:vimeo_video_player/vimeo_video_player.dart';
 
 class ChatBubble extends StatefulWidget {
   final String id;
@@ -19,6 +20,7 @@ class ChatBubble extends StatefulWidget {
   final String receiverID;
   final bool isCurrentUser;
   final bool isImage;
+  final bool isVid;
   final bool isVoice;
   final bool isDoc;
   final Color pLightColor;
@@ -38,6 +40,7 @@ class ChatBubble extends StatefulWidget {
       required this.pLightColor,
       required this.isDoc,
       required this.sDarkColor,
+      required this.isVid,
       required this.pDarkColor,
       required this.message,
       required this.isMap,
@@ -127,7 +130,11 @@ class _ChatBubbleState extends State<ChatBubble> {
                 width: 0,
                 height: 0,
               ),
-        !widget.isImage && !widget.isVoice && !widget.isMap && !widget.isDoc
+        !widget.isImage &&
+                !widget.isVoice &&
+                !widget.isMap &&
+                !widget.isDoc &&
+                !widget.isVid
             ? GestureDetector(
                 onTap: isLink
                     ? () async {
@@ -141,16 +148,14 @@ class _ChatBubbleState extends State<ChatBubble> {
                       }
                     : null,
                 onLongPress: () {
-                  widget.isCurrentUser
-                      ? RequestDialog.drop(
-                          context,
-                          widget.id,
-                          widget.message,
-                          widget.receiverID,
-                          widget.isImage,
-                          widget.isCurrentUser,
-                          widget.isVoice)
-                      : null;
+                  RequestDialog.drop(
+                      context,
+                      widget.id,
+                      widget.message,
+                      widget.receiverID,
+                      widget.isImage,
+                      widget.isCurrentUser,
+                      widget.isVoice);
                 },
                 child: Container(
                   decoration: BoxDecoration(
@@ -180,7 +185,7 @@ class _ChatBubbleState extends State<ChatBubble> {
                   ),
                 ),
               )
-            : widget.isImage && !widget.isVoice && !widget.isMap
+            : widget.isImage
                 ? GestureDetector(
                     onTap: () {
                       final imageProvider = Image.network(widget.message).image;
@@ -448,9 +453,14 @@ class _ChatBubbleState extends State<ChatBubble> {
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
                                             style: TextStyle(
-                                                color: isDarkMode
-                                                    ? Colors.white
-                                                    : Colors.black),
+                                              color: !widget.isCurrentUser
+                                                  ? isDarkMode
+                                                      ? Colors.white
+                                                      : Colors.black
+                                                  : isDarkMode
+                                                      ? Colors.grey.shade400
+                                                      : Colors.grey.shade200,
+                                            ),
                                           ),
                                         ),
                                         Padding(
@@ -473,6 +483,25 @@ class _ChatBubbleState extends State<ChatBubble> {
                                   ),
                                 ),
                               )
+                            // : widget.isVid
+                            //     ? Container(
+                            //         decoration: BoxDecoration(
+                            //           color: widget.isCurrentUser
+                            //               ? (isDarkMode
+                            //                   ? widget.pDarkColor
+                            //                   : widget.pLightColor)
+                            //               : (isDarkMode
+                            //                   ? widget.sDarkColor
+                            //                   : widget.sLightColor),
+                            //           borderRadius: BorderRadius.circular(10.0),
+                            //         ),
+                            //         padding: const EdgeInsets.all(14),
+                            //         margin: const EdgeInsets.symmetric(
+                            //             vertical: 2.5, horizontal: 7),
+                            //         child: VimeoVideoPlayer(
+                            //           url: widget.message,
+                            //         ),
+                            //       )
                             : const SizedBox(),
       ],
     );

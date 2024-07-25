@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
+import 'package:responsive_sizer/responsive_sizer.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class InputList extends StatelessWidget {
@@ -8,8 +9,10 @@ class InputList extends StatelessWidget {
       {super.key,
       required this.uploadImage,
       required this.getLocation,
-      required this.uploadDoc});
+      required this.uploadDoc,
+      required this.uploadVideo});
   final Function uploadImage;
+  final Function uploadVideo;
   final Function getLocation;
   final Function uploadDoc;
   @override
@@ -17,9 +20,8 @@ class InputList extends StatelessWidget {
     double width = MediaQuery.of(context).size.width;
     double height = MediaQuery.of(context).size.height;
     return PopupMenuButton(
-      offset: Offset(0, -(height / 4)),
-      constraints:
-          BoxConstraints.expand(width: width / 1.25, height: height / 4.25),
+      offset: Offset(0, -(27.h)),
+      constraints: BoxConstraints.expand(width: width / 1.25, height: 26.5.h),
       child: TextButton.icon(
           onPressed: null,
           icon: const Icon(Icons.link),
@@ -101,7 +103,7 @@ class InputList extends StatelessWidget {
                 Column(
                   children: [
                     GestureDetector(
-                      onTap: () {
+                      onTap: () async {
                         Navigator.of(context).pop();
                         showDialog(
                             context: context,
@@ -114,7 +116,7 @@ class InputList extends StatelessWidget {
                       child: CircleAvatar(
                         radius: width / 14,
                         backgroundColor: Colors.orange,
-                        child: Icon(Icons.call_outlined,
+                        child: Icon(FontAwesomeIcons.phone,
                             size: width / 15, color: Colors.white),
                       ),
                     ),

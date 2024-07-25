@@ -2,6 +2,8 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:letters/components/chats/user_tile.dart';
 import 'package:letters/pages/chat_page.dart';
@@ -163,9 +165,9 @@ class AllChats extends StatelessWidget {
                                     ],
                                   ),
                                 ));
-                                Navigator.of(context).pop();
                                 await _chatService
                                     .deleteChat(snapshot.data["id"]);
+                                Navigator.of(context).pop();
                               },
                             ),
                             TextButton(
@@ -183,20 +185,77 @@ class AllChats extends StatelessWidget {
                         ),
                       ));
             },
-            child: UserTile(
-              text: usr["name"],
-              receiverID: id,
-              imgUrl: usr['imgUrl'],
-              onTap: () => Navigator.push(
-                context,
-                PageTransition(
-                  type: PageTransitionType.bottomToTop,
-                  child: ChatPage(
-                    receiverName: usr["name"],
-                    receiverEmail: usr["email"],
-                    receiverID: usr["id"],
-                    imgUrl: usr["imgUrl"],
-                    receiverBio: usr["bio"],
+            child: Slidable(
+              endActionPane: ActionPane(
+                motion: BehindMotion(),
+                children: [
+                  SlidableAction(
+                    borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(20),
+                        bottomLeft: Radius.circular(20)),
+                    onPressed: (context) {
+                      Navigator.push(
+                        context,
+                        PageTransition(
+                          type: PageTransitionType.bottomToTop,
+                          child: ChatPage(
+                            receiverName: usr["name"],
+                            receiverEmail: usr["email"],
+                            receiverID: usr["id"],
+                            imgUrl: usr["imgUrl"],
+                            receiverBio: usr["bio"],
+                          ),
+                        ),
+                      );
+                    },
+                    icon: FontAwesomeIcons.arrowRight,
+                    backgroundColor: Colors.blue,
+                    label: "Open",
+                  ),
+                  SlidableAction(
+                    borderRadius: const BorderRadius.only(
+                        topRight: Radius.circular(20),
+                        bottomRight: Radius.circular(20)),
+                    onPressed: (context) async {
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                        backgroundColor: Colors.grey.shade900,
+                        duration: const Duration(seconds: 2),
+                        content: Row(
+                          children: <Widget>[
+                            const CircularProgressIndicator(
+                              color: Colors.blue,
+                            ),
+                            Text(
+                              "  Deleting Chats...",
+                              style: TextStyle(
+                                  color: Theme.of(context).colorScheme.primary),
+                            )
+                          ],
+                        ),
+                      ));
+                      await _chatService.deleteChat(snapshot.data["id"]);
+                    },
+                    icon: Icons.delete,
+                    backgroundColor: Colors.red,
+                    label: "Delete",
+                  ),
+                ],
+              ),
+              child: UserTile(
+                text: usr["name"],
+                receiverID: id,
+                imgUrl: usr['imgUrl'],
+                onTap: () => Navigator.push(
+                  context,
+                  PageTransition(
+                    type: PageTransitionType.bottomToTop,
+                    child: ChatPage(
+                      receiverName: usr["name"],
+                      receiverEmail: usr["email"],
+                      receiverID: usr["id"],
+                      imgUrl: usr["imgUrl"],
+                      receiverBio: usr["bio"],
+                    ),
                   ),
                 ),
               ),

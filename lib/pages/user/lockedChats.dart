@@ -104,7 +104,15 @@ class _LockedChatsState extends State<LockedChats> {
       future: FirebaseFirestore.instance.collection("Users").doc(id).get(),
       builder: ((context, AsyncSnapshot snapshot) {
         if (snapshot.hasError) {
-          return const Text("Error");
+          return Column(
+            children: [
+              Icon(Icons.cancel, size: width / 33),
+              Text(
+                "Error",
+                style: GoogleFonts.lato(fontSize: width / 25),
+              ),
+            ],
+          );
         } else if (snapshot.connectionState == ConnectionState.waiting) {
           return const Text("LOADING....");
         } else if (!snapshot.hasData) {

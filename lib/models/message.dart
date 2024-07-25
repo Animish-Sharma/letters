@@ -6,6 +6,7 @@ class Message {
   final String receiverID;
   final bool isImg;
   final bool isVoice;
+  final bool isVid;
   final bool isMap;
   final bool isDoc;
   final bool read;
@@ -28,6 +29,7 @@ class Message {
     this.long,
     required this.isVoice,
     required this.isMap,
+    required this.isVid,
     required this.read,
     required this.timestamp,
   });
@@ -42,6 +44,7 @@ class Message {
       "lat": lat,
       "long": long,
       "isVoice": isVoice,
+      "isVid": isVid,
       "fName": fName,
       "isDoc": isDoc,
       "read": read,

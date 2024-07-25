@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -10,6 +12,7 @@ import 'package:letters/models/user.dart';
 import 'package:letters/pages/drawer/profile.dart';
 import 'package:letters/services/chat/chat_service.dart';
 import 'package:letters/themes/theme_provider.dart';
+import 'package:observe_internet_connectivity/observe_internet_connectivity.dart';
 import 'package:page_transition/page_transition.dart';
 import "package:provider/provider.dart";
 
@@ -24,6 +27,7 @@ class _HomePageState extends State<HomePage> {
   final _authService = AuthService();
   final TextEditingController _searchController = TextEditingController();
   final _chatService = ChatService();
+  bool isOffline = false;
   String searchText = "";
 
   void logout() async {
@@ -49,7 +53,19 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    getUser();
+    checkInternet();
+  }
+
+  void checkInternet() async {
+    final hasInternet = await InternetConnectivity().hasInternetConnection;
+    if (hasInternet) {
+      getUser();
+    }
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
   }
 
   @override
@@ -57,46 +73,61 @@ class _HomePageState extends State<HomePage> {
     double height = MediaQuery.of(context).size.height;
     double width = MediaQuery.of(context).size.width;
     String a = x.imgUrl ?? "";
-    return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.background,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        foregroundColor: Theme.of(context).colorScheme.inversePrimary,
-        centerTitle: true,
-        title: const Text("Home"),
-        actions: [
-          Container(
-            margin: const EdgeInsets.only(right: 16),
-            child: GestureDetector(
-              onTap: () {
-                Navigator.of(context).push(
-                  PageTransition(
-                    duration: const Duration(milliseconds: 325),
-                    child: const ProfilePage(),
-                    type: PageTransitionType.rightToLeftWithFade,
-                  ),
-                );
-              },
-              child: CircleAvatar(
-                backgroundColor: Colors.transparent,
-                radius: height / 50,
-                child: ClipOval(
-                  child: a == ""
-                      ? Image.asset("assets/profile.png")
-                      : Image.network(
-                          fit: BoxFit.fitWidth,
-                          width: width,
-                          height: width,
-                          a,
+    return InternetConnectivityListener(
+      connectivityListener: (BuildContext context, bool hasInternetAccess) {
+        if (hasInternetAccess) {
+          setState(() {
+            isOffline = false;
+          });
+        } else {
+          setState(() {
+            isOffline = true;
+          });
+        }
+      },
+      child: Scaffold(
+        backgroundColor: Theme.of(context).colorScheme.background,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          foregroundColor: Theme.of(context).colorScheme.inversePrimary,
+          centerTitle: true,
+          title: const Text("Home"),
+          actions: isOffline
+              ? []
+              : [
+                  Container(
+                    margin: const EdgeInsets.only(right: 16),
+                    child: GestureDetector(
+                      onTap: () {
+                        Navigator.of(context).push(
+                          PageTransition(
+                            duration: const Duration(milliseconds: 325),
+                            child: const ProfilePage(),
+                            type: PageTransitionType.rightToLeftWithFade,
+                          ),
+                        );
+                      },
+                      child: CircleAvatar(
+                        backgroundColor: Colors.transparent,
+                        radius: height / 50,
+                        child: ClipOval(
+                          child: a == ""
+                              ? Image.asset("assets/profile.png")
+                              : Image.network(
+                                  fit: BoxFit.fitWidth,
+                                  width: width,
+                                  height: width,
+                                  a,
+                                ),
                         ),
-                ),
-              ),
-            ),
-          ),
-        ],
+                      ),
+                    ),
+                  ),
+                ],
+        ),
+        drawer: !isOffline ? MyDrawer() : null,
+        body: !isOffline ? _buildUserList() : _buildOffline(context),
       ),
-      drawer: const MyDrawer(),
-      body: _buildUserList(),
     );
   }
 
@@ -224,6 +255,29 @@ class _HomePageState extends State<HomePage> {
             AllChats(searchText: searchText)
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildOffline(BuildContext context) {
+    double height = MediaQuery.of(context).size.height;
+    return Center(
+      child: Column(
+        children: <Widget>[
+          const SizedBox(
+            height: 32,
+          ),
+          Icon(FontAwesomeIcons.wifi, size: height / 12),
+          const SizedBox(
+            height: 24,
+          ),
+          Text("You are offline", style: TextStyle(fontSize: height / 35)),
+          const Text(
+            "Right now you are offline, try connecting to an internet connection to use this app.",
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Color.fromARGB(255, 152, 145, 145)),
+          )
+        ],
       ),
     );
   }

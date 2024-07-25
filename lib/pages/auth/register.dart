@@ -1,8 +1,10 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:letters/auth/auth_service.dart';
 import 'package:letters/components/custom/custom_button.dart';
 import 'package:letters/components/custom/custom_textfield.dart';
+import 'package:letters/pages/home.dart';
 import 'package:letters/themes/theme_provider.dart';
 import 'package:provider/provider.dart';
 
@@ -26,6 +28,16 @@ class Register extends StatelessWidget {
         try {
           await authService.signUpWithEmailandPassword(
               _nameController.text, _emailController.text, _pwController.text);
+          if (FirebaseAuth.instance.currentUser != null) {
+            Navigator.of(context).pushReplacement(
+                MaterialPageRoute(builder: (context) => const HomePage()));
+          } else {
+            showDialog(
+                context: context,
+                builder: (context) => AlertDialog(
+                      title: Text("Login Failed for some reason"),
+                    ));
+          }
         } catch (e) {
           showDialog(
             // ignore: use_build_context_synchronously

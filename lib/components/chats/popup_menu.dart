@@ -7,6 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:letters/pages/chat_page.dart';
 import 'package:letters/pages/home.dart';
 import 'package:letters/services/chat/chat_service.dart';
+import 'package:responsive_sizer/responsive_sizer.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class PopUpMenu extends StatefulWidget {
@@ -51,6 +52,7 @@ class _PopUpMenuState extends State<PopUpMenu> {
   @override
   Widget build(BuildContext context) {
     double width = MediaQuery.of(context).size.width;
+    double height = MediaQuery.of(context).size.height;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8),
       child: PopupMenuButton(
@@ -119,12 +121,12 @@ class _PopUpMenuState extends State<PopUpMenu> {
             value: 2,
             onTap: () {
               showBottomSheet(
+                constraints: BoxConstraints(maxHeight: 38.h),
                   context: context,
                   builder: (context) {
                     return StatefulBuilder(
                       builder: (context, setModalState) => SizedBox(
                         width: width,
-                        height: widget.height / 2.75,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: <Widget>[

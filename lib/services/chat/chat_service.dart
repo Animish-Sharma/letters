@@ -1,10 +1,11 @@
 import 'dart:io';
 import 'dart:convert';
-import 'dart:math' as Math;
+import 'package:flutter_gemini/flutter_gemini.dart';
 import "package:http/http.dart" as http;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:letters/models/assistMessage.dart';
 import 'package:letters/models/message.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -112,6 +113,20 @@ class ChatService {
     return await s.doc(chatRoomID).delete();
   }
 
+  Future<void> deleteAssistantChat() async {
+    CollectionReference s = _firestore.collection("assistant");
+    await s
+        .doc(_auth.currentUser!.uid)
+        .collection("Messages")
+        .get()
+        .then((value) {
+      for (DocumentSnapshot ds in value.docs) {
+        ds.reference.delete();
+      }
+    });
+    return await s.doc(_auth.currentUser!.uid).delete();
+  }
+
   Stream<List<Map<String, dynamic>>> getCurrentUserStream(String email) {
     return _firestore
         .collection("Users")
@@ -195,6 +210,18 @@ class ChatService {
         : null);
   }
 
+  Future<void> createAssistantRoom(String receiverID) async {
+    final String currentUserID = _auth.currentUser!.uid;
+
+    final a = _firestore.collection('assistant').doc(currentUserID);
+
+    await a.get().then((value) => !value.exists
+        ? a.set({
+            "user": currentUserID,
+          })
+        : null);
+  }
+
   Future<void> sendMessage(String receiverID, message, String repliedTo) async {
     final String currentUserID = _auth.currentUser!.uid;
     final String currentUserEmail = _auth.currentUser!.email!;
@@ -205,6 +232,7 @@ class ChatService {
       read: false,
       senderEmail: currentUserEmail,
       isVoice: false,
+      isVid: false,
       isMap: false,
       receiverID: receiverID,
       isDoc: false,
@@ -225,6 +253,46 @@ class ChatService {
     await sendNotifications(receiverID, message);
   }
 
+  Future<void> sendAssistantMessage(String message) async {
+    final String currentUserID = _auth.currentUser!.uid;
+    final String currentUserEmail = _auth.currentUser!.email!;
+    final Timestamp timestamp = Timestamp.now();
+
+    AssistantMessage newAssistantMessage = AssistantMessage(
+      senderID: currentUserID,
+      senderEmail: currentUserEmail,
+      message: message,
+      timestamp: timestamp,
+    );
+    await _firestore
+        .collection("assistant")
+        .doc(currentUserID)
+        .collection("Messages")
+        .add(newAssistantMessage.toMap());
+    await getAssistantResponse(message);
+  }
+
+  Future<void> getAssistantResponse(String message) async {
+    final String currentUserID = _auth.currentUser!.uid;
+    final Timestamp timestamp = Timestamp.now();
+    final assist = Gemini.instance;
+    String? repMessage = "";
+    await assist
+        .text(message)
+        .then((value) => print(repMessage = value?.output));
+    AssistantMessage newAssistantMessage = AssistantMessage(
+      senderID: "ASSISTANT",
+      senderEmail: "ASSISTANT",
+      message: repMessage!,
+      timestamp: timestamp,
+    );
+    await _firestore
+        .collection("assistant")
+        .doc(currentUserID)
+        .collection("Messages")
+        .add(newAssistantMessage.toMap());
+  }
+
   Future<void> sendImageMessage(String receiverID, String path) async {
     final String currentUserID = _auth.currentUser!.uid;
     final String currentUserEmail = _auth.currentUser!.email!;
@@ -240,12 +308,50 @@ class ChatService {
       senderEmail: currentUserEmail,
       read: false,
       isMap: false,
+      isVid: false,
       receiverID: receiverID,
       repliedTo: "",
       message: imgUrl,
       isDoc: false,
       isVoice: false,
       isImg: true,
+      timestamp: timestamp,
+    );
+    List<String> ids = [currentUserID, receiverID];
+    ids.sort();
+    String chatRoomID = ids.join("_");
+    await lastMessageSent(chatRoomID, timestamp, receiverID, "Image");
+    await _firestore
+        .collection("chat_room")
+        .doc(chatRoomID)
+        .collection("Messages")
+        .add(newMessage.toMap());
+    await sendNotifications(receiverID, "Image");
+  }
+
+  Future<void> sendVideoMessage(String receiverID, String path) async {
+    final String currentUserID = _auth.currentUser!.uid;
+    final String currentUserEmail = _auth.currentUser!.email!;
+    final Timestamp timestamp = Timestamp.now();
+    final String uniqueName =
+        'Letters Image ${timestamp.microsecondsSinceEpoch.toString()}';
+    Reference refImg = _ref.child("videos");
+    Reference refImgUplaod = refImg.child(uniqueName);
+    await refImgUplaod.putFile(
+        File(path), SettableMetadata(contentType: 'video/mp4'));
+    String imgUrl = await refImgUplaod.getDownloadURL();
+    Message newMessage = Message(
+      senderID: currentUserID,
+      senderEmail: currentUserEmail,
+      read: false,
+      isMap: false,
+      receiverID: receiverID,
+      isVid: true,
+      repliedTo: "",
+      message: imgUrl,
+      isDoc: false,
+      isVoice: false,
+      isImg: false,
       timestamp: timestamp,
     );
     List<String> ids = [currentUserID, receiverID];
@@ -275,6 +381,7 @@ class ChatService {
       senderID: currentUserID,
       senderEmail: currentUserEmail,
       fName: fName,
+      isVid: false,
       read: false,
       isMap: false,
       receiverID: receiverID,
@@ -308,6 +415,7 @@ class ChatService {
       senderEmail: currentUserEmail,
       read: false,
       isMap: true,
+      isVid: false,
       isDoc: false,
       receiverID: receiverID,
       repliedTo: "",
@@ -345,6 +453,7 @@ class ChatService {
       senderEmail: currentUserEmail,
       receiverID: receiverID,
       read: false,
+      isVid: false,
       isDoc: false,
       message: url,
       isMap: false,
@@ -446,6 +555,15 @@ class ChatService {
     return _firestore
         .collection("chat_room")
         .doc(chatRoomID)
+        .collection("Messages")
+        .orderBy("timestamp")
+        .snapshots();
+  }
+
+  Stream<QuerySnapshot> getAssistantMessages(String userID) {
+    return _firestore
+        .collection("assistant")
+        .doc(userID)
         .collection("Messages")
         .orderBy("timestamp")
         .snapshots();

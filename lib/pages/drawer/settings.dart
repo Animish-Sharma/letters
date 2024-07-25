@@ -37,7 +37,13 @@ class SettingsPage extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: <Widget>[
-                const Text("Dark Mode"),
+                Text(
+                  "Dark Mode",
+                  style: GoogleFonts.workSans(
+                    letterSpacing: .8,
+                    fontSize: width / 25,
+                  ),
+                ),
                 CupertinoSwitch(
                     value: Provider.of<ThemeProvider>(context, listen: false)
                         .isDarkMode,
@@ -62,7 +68,13 @@ class SettingsPage extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text("Update User Information"),
+                  Text(
+                    "UPDATE",
+                    style: GoogleFonts.workSans(
+                      letterSpacing: .8,
+                      fontSize: width / 25,
+                    ),
+                  ),
                   Icon(
                     Icons.arrow_right,
                     color: Theme.of(context).colorScheme.inversePrimary,

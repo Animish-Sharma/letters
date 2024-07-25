@@ -116,6 +116,21 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     } catch (e) {}
   }
 
+  uploadVideo() async {
+    ImagePicker _imgPicker = ImagePicker();
+    XFile? file = await _imgPicker.pickVideo(source: ImageSource.gallery);
+    try {
+      ScaffMess.messanger(context, "Uploading", 5);
+      await _chatService.sendVideoMessage(widget.receiverID, file!.path);
+      setState(() {
+        repliedMessage = "";
+        messageReply = false;
+        repliedCurrentUser = false;
+      });
+      // ignore: empty_catches
+    } catch (e) {}
+  }
+
   uploadDocument() async {
     final result = await FilePicker.platform.pickFiles();
     if (result != null) {
@@ -542,6 +557,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
               isDoc: data["isDoc"],
               pLightColor: pLightColor,
               pDarkColor: pDarkColor,
+              isVid: data["isVid"],
               isMap: data["isMap"],
               lat: data["lat"] ?? 0,
               long: data["long"] ?? 0,
@@ -599,6 +615,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
               icon: InputList(
                 uploadImage: uploadImage,
                 getLocation: getLocation,
+                uploadVideo: uploadVideo,
                 uploadDoc: uploadDocument,
               ),
               suffix: InkWell(
