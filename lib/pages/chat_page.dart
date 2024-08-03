@@ -11,6 +11,9 @@ import 'package:letters/auth/auth_service.dart';
 import 'package:letters/components/chats/chat_bubble.dart';
 import 'package:letters/components/chats/input_list.dart';
 import 'package:letters/components/custom/custom_textfield.dart';
+import 'package:letters/pages/user/videoCall.dart';
+import 'package:page_transition/page_transition.dart';
+import 'package:path/path.dart' as p;
 import 'package:letters/components/chats/popup_menu.dart';
 import 'package:letters/components/custom/request_dialog.dart';
 import 'package:letters/components/custom/scaff_mess.dart';
@@ -121,7 +124,8 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     XFile? file = await _imgPicker.pickVideo(source: ImageSource.gallery);
     try {
       ScaffMess.messanger(context, "Uploading", 5);
-      await _chatService.sendVideoMessage(widget.receiverID, file!.path);
+      final name = p.basename(file!.path);
+      await _chatService.sendVideoMessage(widget.receiverID, file!.path, name);
       setState(() {
         repliedMessage = "";
         messageReply = false;
@@ -280,7 +284,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
         backgroundColor: Colors.transparent,
         flexibleSpace: Container(
           decoration: BoxDecoration(
-            borderRadius: const BorderRadius.all(Radius.circular(30)),
+            borderRadius: const BorderRadius.all(Radius.circular(10)),
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
@@ -343,6 +347,16 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
           ],
         ),
         actions: <Widget>[
+          IconButton(
+            onPressed: () => Navigator.of(context).push(PageTransition(
+              child: VideoCallPage(
+                receiverName: widget.receiverName,
+                imgUrl: widget.imgUrl,
+              ),
+              type: PageTransitionType.bottomToTop,
+            )),
+            icon: Icon(Icons.call),
+          ),
           PopUpMenu(
             height: height,
             widget: widget,

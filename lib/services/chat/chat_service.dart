@@ -329,12 +329,13 @@ class ChatService {
     await sendNotifications(receiverID, "Image");
   }
 
-  Future<void> sendVideoMessage(String receiverID, String path) async {
+  Future<void> sendVideoMessage(
+      String receiverID, String path, String fName) async {
     final String currentUserID = _auth.currentUser!.uid;
     final String currentUserEmail = _auth.currentUser!.email!;
     final Timestamp timestamp = Timestamp.now();
     final String uniqueName =
-        'Letters Image ${timestamp.microsecondsSinceEpoch.toString()}';
+        'Letters Video ${timestamp.microsecondsSinceEpoch.toString()}';
     Reference refImg = _ref.child("videos");
     Reference refImgUplaod = refImg.child(uniqueName);
     await refImgUplaod.putFile(
@@ -347,6 +348,7 @@ class ChatService {
       isMap: false,
       receiverID: receiverID,
       isVid: true,
+      fName: fName,
       repliedTo: "",
       message: imgUrl,
       isDoc: false,

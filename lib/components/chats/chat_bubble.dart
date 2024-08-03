@@ -1,5 +1,6 @@
 import 'package:audioplayers/audioplayers.dart';
 import 'package:chat_bubbles/chat_bubbles.dart';
+import 'package:chewie/chewie.dart';
 import 'package:easy_image_viewer/easy_image_viewer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
@@ -7,12 +8,14 @@ import 'package:flutter_file_downloader/flutter_file_downloader.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:letters/components/chats/localVideoPlayer.dart';
 import 'package:letters/components/custom/request_dialog.dart';
 import 'package:letters/components/custom/scaff_mess.dart';
 import 'package:letters/themes/theme_provider.dart';
+import 'package:page_transition/page_transition.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:vimeo_video_player/vimeo_video_player.dart';
+import 'package:video_player/video_player.dart';
 
 class ChatBubble extends StatefulWidget {
   final String id;
@@ -60,7 +63,12 @@ class _ChatBubbleState extends State<ChatBubble> {
   bool isPlaying = false;
   AudioPlayer audioPlayer = AudioPlayer();
   double duration = 0;
+  late VideoPlayerController videoPlayerController;
   Duration position = const Duration();
+
+  void iniVideoController() async {
+    await videoPlayerController.initialize();
+  }
 
   @override
   void initState() {
@@ -483,26 +491,69 @@ class _ChatBubbleState extends State<ChatBubble> {
                                   ),
                                 ),
                               )
-                            // : widget.isVid
-                            //     ? Container(
-                            //         decoration: BoxDecoration(
-                            //           color: widget.isCurrentUser
-                            //               ? (isDarkMode
-                            //                   ? widget.pDarkColor
-                            //                   : widget.pLightColor)
-                            //               : (isDarkMode
-                            //                   ? widget.sDarkColor
-                            //                   : widget.sLightColor),
-                            //           borderRadius: BorderRadius.circular(10.0),
-                            //         ),
-                            //         padding: const EdgeInsets.all(14),
-                            //         margin: const EdgeInsets.symmetric(
-                            //             vertical: 2.5, horizontal: 7),
-                            //         child: VimeoVideoPlayer(
-                            //           url: widget.message,
-                            //         ),
-                            //       )
-                            : const SizedBox(),
+                            : widget.isVid
+                                ? GestureDetector(
+                                    onTap: () {
+                                      Navigator.of(context).push(PageTransition(
+                                        type: PageTransitionType.fade,
+                                        child: LocalVideoPlayer(
+                                            videoUrl: widget.message),
+                                      ));
+                                    },
+                                    onLongPress: () {
+                                      RequestDialog.vidDrop(
+                                          context,
+                                          widget.id,
+                                          widget.fName,
+                                          widget.message,
+                                          widget.isCurrentUser,
+                                          widget.receiverID);
+                                    },
+                                    child: Container(
+                                      height: height / 4,
+                                      width: width / 1.75,
+                                      decoration: BoxDecoration(
+                                        color: widget.isCurrentUser
+                                            ? (isDarkMode
+                                                ? widget.pDarkColor
+                                                : widget.pLightColor)
+                                            : (isDarkMode
+                                                ? widget.sDarkColor
+                                                : widget.sLightColor),
+                                        borderRadius:
+                                            BorderRadius.circular(10.0),
+                                      ),
+                                      padding: const EdgeInsets.all(8),
+                                      margin: const EdgeInsets.symmetric(
+                                          vertical: 5, horizontal: 7),
+                                      child: Stack(
+                                        children: <Widget>[
+                                          Container(
+                                            decoration: const BoxDecoration(
+                                                color: Colors.black,
+                                                borderRadius: BorderRadius.all(
+                                                    Radius.circular(10))),
+                                          ),
+                                          Align(
+                                            alignment: Alignment.center,
+                                            child: Container(
+                                              padding: const EdgeInsets.all(4),
+                                              decoration: const BoxDecoration(
+                                                color: Color(0xff999999),
+                                                shape: BoxShape.circle,
+                                              ),
+                                              child: Icon(
+                                                Icons.play_arrow,
+                                                color: Colors.white,
+                                                size: width / 9,
+                                              ),
+                                            ),
+                                          )
+                                        ],
+                                      ),
+                                    ),
+                                  )
+                                : const SizedBox(),
       ],
     );
   }

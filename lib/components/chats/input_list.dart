@@ -105,24 +105,18 @@ class InputList extends StatelessWidget {
                     GestureDetector(
                       onTap: () async {
                         Navigator.of(context).pop();
-                        showDialog(
-                            context: context,
-                            builder: (context) => const AlertDialog(
-                                  title: Text("Coming Soon"),
-                                  content: Text(
-                                      "This feature is in testing right now, it will soon be available for all users \nAnimish Sharma"),
-                                ));
+                        await uploadVideo();
                       },
                       child: CircleAvatar(
                         radius: width / 14,
                         backgroundColor: Colors.orange,
-                        child: Icon(FontAwesomeIcons.phone,
+                        child: Icon(FontAwesomeIcons.fileVideo,
                             size: width / 15, color: Colors.white),
                       ),
                     ),
                     const Padding(
                       padding: EdgeInsets.only(top: 8.0),
-                      child: Text("Call"),
+                      child: Text("Video"),
                     )
                   ],
                 ),

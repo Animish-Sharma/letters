@@ -116,26 +116,43 @@ class RequestDialog {
                     style: GoogleFonts.roboto(color: Colors.white)),
               )
             : const SizedBox(height: 0, width: 0),
-        !isVoice && !isImg ? ListTile(
-          onTap: () async {
-            final translator = GoogleTranslator();
-            Navigator.of(context).pop();
-            final res = await translator.translate(message, to: "en");
-            showBottomSheet(context: context, builder: (context)=> Container(
-              child: Column(children: [
-                SizedBox(height: height / 80),
-                Center(
-                  child: Text("Translation",style: TextStyle(fontSize: height / 30),),
-                ),
-                SizedBox(height: height / 40),
-                Text("Text: $message",style: TextStyle(fontSize: height / 45),),
-                const Divider(),
-                Text("Translation: ${res.text}",style: TextStyle(fontSize: height / 45),)
-              ],),
-            ),constraints: BoxConstraints(maxHeight: height / 4.75));
-          },
-          title: Text("Translate",style: GoogleFonts.roboto(color: Colors.white)),
-        ) : const SizedBox(height: 0, width: 0),
+        !isVoice && !isImg
+            ? ListTile(
+                onTap: () async {
+                  final translator = GoogleTranslator();
+                  Navigator.of(context).pop();
+                  final res = await translator.translate(message, to: "en");
+                  showBottomSheet(
+                      context: context,
+                      builder: (context) => Container(
+                            child: Column(
+                              children: [
+                                SizedBox(height: height / 80),
+                                Center(
+                                  child: Text(
+                                    "Translation",
+                                    style: TextStyle(fontSize: height / 30),
+                                  ),
+                                ),
+                                SizedBox(height: height / 40),
+                                Text(
+                                  "Text: $message",
+                                  style: TextStyle(fontSize: height / 45),
+                                ),
+                                const Divider(),
+                                Text(
+                                  "Translation: ${res.text}",
+                                  style: TextStyle(fontSize: height / 45),
+                                )
+                              ],
+                            ),
+                          ),
+                      constraints: BoxConstraints(maxHeight: height / 4.75));
+                },
+                title: Text("Translate",
+                    style: GoogleFonts.roboto(color: Colors.white)),
+              )
+            : const SizedBox(height: 0, width: 0),
         isCurrentUser
             ? ListTile(
                 mouseCursor: SystemMouseCursors.click,
@@ -227,6 +244,87 @@ class RequestDialog {
             Navigator.of(context).pop();
           },
           title: Text(isMap ? "Open in Google Maps" : "Download Document",
+              style: GoogleFonts.roboto(color: Colors.white)),
+        ),
+        isCurrentUser
+            ? ListTile(
+                mouseCursor: SystemMouseCursors.click,
+                onTap: () async {
+                  Navigator.of(context).pop();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text("Deleting Message"),
+                    ),
+                  );
+                  await chatService.deleteMessage(id, receiverID);
+                },
+                title: Text("Delete Message",
+                    style: GoogleFonts.roboto(color: Colors.white)),
+              )
+            : const SizedBox(
+                height: 0,
+                width: 0,
+              ),
+        TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            child: Text(
+              "Back",
+              style: GoogleFonts.inter(color: Colors.blue.shade300),
+            ))
+      ],
+    );
+
+    showDialog(
+      context: context,
+      builder: (BuildContext ctx) {
+        return dropdown;
+      },
+    );
+  }
+
+  static vidDrop(
+    BuildContext context,
+    String id,
+    String? fName,
+    String? url,
+    bool isCurrentUser,
+    String receiverID,
+  ) {
+    final height = MediaQuery.of(context).size.height;
+    final chatService = ChatService();
+
+    AlertDialog dropdown = AlertDialog(
+      backgroundColor: const Color(0xff1e1e24),
+      title: SizedBox(
+          height: height / 30,
+          child: Text("Video",
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.roboto(color: Colors.white))),
+      actions: <Widget>[
+        ListTile(
+          mouseCursor: SystemMouseCursors.click,
+          onTap: () async {
+            ScaffMess.messanger(context, "Downloading", 3);
+            print(url);
+            FileDownloader.downloadFile(
+                url: url!,
+                name: fName ?? "Video Down",
+                onProgress: (String? fileName, double progress) {},
+                onDownloadCompleted: (String path) {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                    content: Text("File Saved in Downloads"),
+                  ));
+                },
+                onDownloadError: (String error) {
+                  RequestDialog.show(
+                      context, "An error occurred while downloading this file");
+                });
+
+            Navigator.of(context).pop();
+          },
+          title: Text("Download Video",
               style: GoogleFonts.roboto(color: Colors.white)),
         ),
         isCurrentUser

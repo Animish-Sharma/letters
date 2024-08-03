@@ -51,7 +51,7 @@ class ResetPage extends StatelessWidget {
                 controller: _emailController,
               ),
               Padding(
-                padding: EdgeInsets.only(right: width / 6),
+                padding: EdgeInsets.only(right: width / 6, left: width / 50),
                 child: Text(
                   "*Email will only be sent to valid registered emails",
                   style: TextStyle(
